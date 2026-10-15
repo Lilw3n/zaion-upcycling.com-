@@ -35,6 +35,15 @@ export default async function AtelierHome() {
         <Link href="/atelier/commandes" className="btn-line">Commandes</Link>
         <Link href="/atelier/offres" className="btn-line">Promos et parrainage</Link>
       </div>
+      <section className="max-w-2xl bg-foam p-5 text-sm">
+        <h2 className="font-semibold">Hébergement du site</h2>
+        <p className="mt-2 text-ink/80">
+          Pour l'instant, c'est Wendy qui garde l'hébergement. Tu n'as rien à ouvrir ni à payer pour que le site reste en ligne.
+        </p>
+        <p className="mt-2 text-ink/80">
+          Si le site tourne bien, avec des visites et des commandes, tu pourras être amenée à prendre le même hébergement de ton côté, chez IONOS : un petit serveur à ton nom. Tes e-mails y sont déjà. On te préviendra, et on le fera ensemble.
+        </p>
+      </section>
       <div className="grid gap-3 md:grid-cols-4">
         <MoneyStat label="CA HT" real={stats.real.ht} withExamples={stats.withExamples.ht} />
         <MoneyStat label="TVA" real={stats.real.vat} withExamples={stats.withExamples.vat} />
