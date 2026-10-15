@@ -8,7 +8,18 @@ export const users = pgTable("users", {
   role: text("role").notNull(),
   phone: text("phone"),
   address: text("address"),
+  googleSub: text("google_sub"),
+  authProvider: text("auth_provider").default("password"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const authTokens = pgTable("auth_tokens", {
+  id: text("id").primaryKey(),
+  email: text("email").notNull(),
+  tokenHash: text("token_hash").notNull(),
+  purpose: text("purpose").notNull(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  used: boolean("used").notNull().default(false),
 });
 
 export const settings = pgTable("settings", {

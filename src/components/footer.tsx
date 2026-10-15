@@ -41,6 +41,8 @@ export function Footer() {
         <div className="mx-auto flex max-w-6xl flex-wrap gap-4 px-4 py-4 text-xs text-sand">
           <Link href="/mentions-legales">Mentions légales</Link>
           <Link href="/cgv">CGV</Link>
+          <Link href="/politique-de-confidentialite">Confidentialité</Link>
+          <Link href="/cookies">Cookies</Link>
           <span>© {new Date().getFullYear()} Zaïon Upcycling</span>
         </div>
       </div>

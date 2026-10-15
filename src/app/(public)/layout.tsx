@@ -1,3 +1,4 @@
+import { CookieNotice } from "@/components/cookie-notice";
 import { Footer } from "@/components/footer";
 import { Header } from "@/components/header";
 import { getSession } from "@/lib/session";
@@ -11,6 +12,7 @@ export default async function PublicLayout({ children }: { children: React.React
       <Header session={session} />
       <main>{children}</main>
       <Footer />
+      <CookieNotice />
     </>
   );
 }

@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { charges, revenues, users } from "@/db/schema";
 import { euros } from "@/lib/format";
 import { readSettings, summarize } from "@/lib/finance";
+import { googleReady, ionosReady } from "@/lib/providers";
 import { CommissionForm } from "./commission-form";
 
 export default async function PilotagePage() {
@@ -43,6 +44,13 @@ export default async function PilotagePage() {
         <p className="mt-4 text-sm">
           L'espace complet de Zaïon est dans <Link href="/atelier" className="underline">Atelier</Link>. Vous y voyez les devis, contacts, revenus, charges, commandes et pièces.
         </p>
+      </section>
+      <section className="bg-foam p-5">
+        <h2 className="font-semibold">Connexions à brancher</h2>
+        <ul className="mt-3 space-y-2 text-sm">
+          <li>Messagerie IONOS : {ionosReady() ? "reliée, les liens de connexion partent." : "en attente du transfert de la boîte contact@zaion-upcycling.com depuis l'hébergeur actuel. Variables IONOS_SMTP_USER et IONOS_SMTP_PASSWORD."}</li>
+          <li>Google : {googleReady() ? "relié." : "en attente du compte Google de l'atelier. Variables GOOGLE_CLIENT_ID et GOOGLE_CLIENT_SECRET. URI de redirection : /api/auth/google/callback."}</li>
+        </ul>
       </section>
       <section className="bg-foam p-5">
         <h2 className="font-semibold">Votre mot de passe</h2>

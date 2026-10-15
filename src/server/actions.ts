@@ -1,11 +1,15 @@
 "use server";
 
 import bcrypt from "bcryptjs";
+import { createHash, randomBytes } from "node:crypto";
 import { count, eq } from "drizzle-orm";
+import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
+import { ensureAuthSchema } from "@/db/ensure";
 import {
+  authTokens,
   charges,
   leads,
   orderItems,
@@ -17,7 +21,10 @@ import {
   users,
   type Role,
 } from "@/db/schema";
+import { company } from "@/lib/company";
 import { splitTtc } from "@/lib/format";
+import { sendMailboxMail } from "@/lib/mail";
+import { ionosReady } from "@/lib/providers";
 import { readSettings, setSetting } from "@/lib/finance";
 import { assemblyQuestions } from "@/lib/questions";
 import { clearSession, getSession, homeFor, setSession, type Session } from "@/lib/session";
@@ -78,6 +85,39 @@ export async function loginAction(_prev: ActionState, formData: FormData): Promi
   const role = user.role as Role;
   await setSession({ id: user.id, email: user.email, name: user.name, role });
   redirect(next.startsWith("/") ? next : homeFor(role));
+}
+
+export async function magicLinkAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const email = clean(formData.get("email"), 180).toLowerCase();
+  if (!email) return { error: "Indiquez votre e-mail." };
+  if (!ionosReady()) {
+    return {
+      error: "Le lien par e-mail sera envoyé depuis la boîte IONOS de l'atelier, dès qu'elle remplacera l'hébergeur actuel. En attendant, connectez-vous avec votre mot de passe.",
+    };
+  }
+  await ensureAuthSchema();
+  const [user] = await db.select().from(users).where(eq(users.email, email));
+  if (user) {
+    const token = randomBytes(32).toString("hex");
+    await db.insert(authTokens).values({
+      id: uid("tok"),
+      email,
+      tokenHash: createHash("sha256").update(token).digest("hex"),
+      purpose: "magic",
+      expiresAt: new Date(Date.now() + 30 * 60 * 1000),
+      used: false,
+    });
+    const headerList = await headers();
+    const host = headerList.get("x-forwarded-host") || headerList.get("host");
+    const proto = headerList.get("x-forwarded-proto") || "https";
+    const link = `${proto}://${host}/api/auth/lien?token=${token}`;
+    await sendMailboxMail({
+      to: email,
+      subject: `Connexion à ${company.brand}`,
+      text: `Bonjour,\n\nPour ouvrir votre espace Zaïon Upcycling, utilisez ce lien dans les 30 minutes :\n${link}\n\nSi vous n'êtes pas à l'origine de cette demande, ignorez ce message.\n\n${company.name}\n${company.email}`,
+    });
+  }
+  return { ok: "Si un compte correspond à cet e-mail, le lien de connexion vient d'être envoyé." };
 }
 
 export async function logoutAction() {
