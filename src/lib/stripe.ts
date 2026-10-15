@@ -29,11 +29,11 @@ export async function createZaionCheckout(input: { order: CheckoutOrder; origin:
     },
     body,
   });
-  const payload = (await response.json()) as { url?: string; error?: { message?: string } };
-  if (!response.ok || !payload.url) {
+  const payload = (await response.json()) as { id?: string; url?: string; error?: { message?: string } };
+  if (!response.ok || !payload.url || !payload.id) {
     return { error: "Stripe n'a pas ouvert le paiement. Vérifiez que la clé est bien celle du compte de Zaïon." as const };
   }
-  return { url: payload.url };
+  return { url: payload.url, id: payload.id };
 }
 
 export async function readZaionCheckout(sessionId: string) {

@@ -45,8 +45,9 @@ export default async function OrdersAdminPage() {
                 {order.referrerName && <p className="text-sm text-ink/60">Parrain {order.referrerName} · part notée {euros(order.referralCreditCents)}</p>}
                 {showCommission && <p className="text-sm text-ink/60">Part partenaire {euros(order.commissionCents)}</p>}
                 <p className="text-sm">{order.address}</p>
+                {order.checkoutSession && !order.paymentRef && <p className="text-sm text-rust">En attente du paiement Stripe</p>}
                 {order.paymentRef?.startsWith("manuel") && <p className="text-sm text-moss">Payée manuellement{order.paymentRef.length > 6 ? ` · ${order.paymentRef.slice(7)}` : ""}</p>}
-                {order.paymentRef && !order.paymentRef.startsWith("manuel") && <p className="text-sm text-moss">Payée par carte · {order.paymentRef}</p>}
+                {order.paymentRef && !order.paymentRef.startsWith("manuel") && <p className="text-sm text-moss">Payée par carte</p>}
               </div>
               <form action={updateOrderStatus} className="flex gap-2">
                 <input type="hidden" name="id" value={order.id} />

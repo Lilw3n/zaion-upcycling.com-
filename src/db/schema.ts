@@ -64,6 +64,8 @@ export const orders = pgTable("orders", {
   note: text("note"),
   atelierNote: text("atelier_note"),
   paymentRef: text("payment_ref"),
+  checkoutSession: text("checkout_session"),
+  paymentAlert: boolean("payment_alert").notNull().default(false),
   promoCode: text("promo_code"),
   discountCents: integer("discount_cents").notNull().default(0),
   referralCreditCents: integer("referral_credit_cents").notNull().default(0),

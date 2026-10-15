@@ -438,7 +438,10 @@ export async function placeOrder(_prev: ActionState, formData: FormData): Promis
       order: { id, number, customerEmail: email, totalCents: offer.totalCents },
       origin: `${proto}://${host}`,
     });
-    if (checkout.url) redirect(checkout.url);
+    if ("id" in checkout && checkout.url) {
+      await db.update(orders).set({ checkoutSession: checkout.id }).where(eq(orders.id, id));
+      redirect(checkout.url);
+    }
     redirect(`/compte/commandes/${id}?neuf=1&carte=echec`);
   }
   redirect(`/compte/commandes/${id}?neuf=1`);
@@ -851,6 +854,14 @@ export async function updateProduct(_prev: ActionState, formData: FormData): Pro
   return { ok: "Pièce enregistrée." };
 }
 
+export async function dismissPaymentAlert(formData: FormData) {
+  await staff();
+  const id = clean(formData.get("id"), 40);
+  await db.update(orders).set({ paymentAlert: false }).where(eq(orders.id, id));
+  revalidatePath("/atelier");
+  revalidatePath("/pilotage");
+}
+
 export async function saveOrderNote(formData: FormData) {
   await staff();
   await ensureCatalog();
@@ -953,10 +964,11 @@ export async function requestClientPayment(_prev: ActionState, formData: FormDat
   await touchLead({ name, email, phone, source: "paiement", status: "devis", notes: `${number} · ${label}` });
 
   const checkout = await openPaymentLink({ id, number, customerEmail: email, totalCents }, label);
-  if (!checkout.url) {
+  if (!("url" in checkout) || !checkout.url) {
     revalidatePath("/atelier/commandes");
-    return { error: checkout.error || "La commande est créée, le lien Stripe n'a pas pu s'ouvrir." };
+    return { error: ("error" in checkout && checkout.error) || "La commande est créée, le lien Stripe n'a pas pu s'ouvrir." };
   }
+  await db.update(orders).set({ checkoutSession: checkout.id }).where(eq(orders.id, id));
   let mailed = false;
   if (ionosReady()) {
     try {
@@ -988,7 +1000,8 @@ export async function staffPaymentLink(_prev: ActionState, formData: FormData): 
   if (!order || order.status === "annulee" || order.paymentRef) return { error: "Cette commande n'attend plus de paiement." };
   const [item] = await db.select().from(orderItems).where(eq(orderItems.orderId, id));
   const checkout = await openPaymentLink(order, item?.name || `Commande ${order.number}`);
-  if (!checkout.url) return { error: checkout.error || "Stripe n'a pas ouvert le lien." };
+  if (!("url" in checkout) || !checkout.url) return { error: ("error" in checkout && checkout.error) || "Stripe n'a pas ouvert le lien." };
+  await db.update(orders).set({ checkoutSession: checkout.id }).where(eq(orders.id, id));
   return { ok: "Lien prêt à envoyer.", paymentUrl: checkout.url };
 }
 
@@ -1007,7 +1020,8 @@ export async function startCardPayment(formData: FormData) {
     order: { id: order.id, number: order.number, customerEmail: order.customerEmail, totalCents: order.totalCents },
     origin: `${proto}://${host}`,
   });
-  if (!checkout.url) redirect(`/compte/commandes/${id}?carte=echec`);
+  if (!("id" in checkout) || !checkout.url) redirect(`/compte/commandes/${id}?carte=echec`);
+  await db.update(orders).set({ checkoutSession: checkout.id }).where(eq(orders.id, id));
   redirect(checkout.url);
 }
 

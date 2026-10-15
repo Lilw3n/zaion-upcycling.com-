@@ -25,6 +25,8 @@ export function ensureCatalog() {
     await db.execute(sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS referral_credit_cents integer NOT NULL DEFAULT 0`);
     await db.execute(sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS referrer_name text`);
     await db.execute(sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS example boolean NOT NULL DEFAULT false`);
+    await db.execute(sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS checkout_session text`);
+    await db.execute(sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_alert boolean NOT NULL DEFAULT false`);
     await db.execute(sql`ALTER TABLE revenues ADD COLUMN IF NOT EXISTS example boolean NOT NULL DEFAULT false`);
     await db.execute(sql`ALTER TABLE charges ADD COLUMN IF NOT EXISTS example boolean NOT NULL DEFAULT false`);
     await db.execute(sql`ALTER TABLE leads ADD COLUMN IF NOT EXISTS example boolean NOT NULL DEFAULT false`);

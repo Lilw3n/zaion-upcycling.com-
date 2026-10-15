@@ -43,9 +43,7 @@ export function PaymentRequestForm({ clients }: { clients: { id: string; name: s
         <button className="btn" disabled={pending}>{pending ? "Ouverture…" : "Créer le lien Stripe"}</button>
         {state?.error && <p className="mt-2 text-sm text-rust">{state.error}</p>}
         {state?.ok && <p className="mt-2 text-sm text-moss">{state.ok}</p>}
-        {state?.paymentUrl && (
-          <input readOnly value={state.paymentUrl} className="field mt-2" onFocus={(event) => event.currentTarget.select()} />
-        )}
+        {state?.paymentUrl && <StripeLinkBar url={state.paymentUrl} />}
       </div>
     </form>
   );
@@ -58,9 +56,27 @@ export function PaymentLinkButton({ orderId }: { orderId: string }) {
       <input type="hidden" name="id" value={orderId} />
       <button className="btn" disabled={pending}>{pending ? "Ouverture…" : "Lien Stripe à envoyer"}</button>
       {state?.error && <p className="mt-2 text-sm text-rust">{state.error}</p>}
-      {state?.paymentUrl && (
-        <input readOnly value={state.paymentUrl} className="field mt-2" onFocus={(event) => event.currentTarget.select()} />
-      )}
+      {state?.paymentUrl && <StripeLinkBar url={state.paymentUrl} />}
     </form>
+  );
+}
+
+function StripeLinkBar({ url }: { url: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <div className="mt-3 flex flex-wrap items-center gap-2">
+      <a className="btn" href={url} target="_blank" rel="noopener noreferrer">Ouvrir</a>
+      <button
+        type="button"
+        className="btn"
+        onClick={async () => {
+          await navigator.clipboard.writeText(url);
+          setCopied(true);
+        }}
+      >
+        {copied ? "Copié" : "Copier"}
+      </button>
+      <input readOnly value={url} className="field min-w-0 flex-1" onFocus={(event) => event.currentTarget.select()} />
+    </div>
   );
 }
