@@ -77,7 +77,7 @@ export default async function PilotagePage() {
           L'argent des clients doit arriver sur le Stripe de Zaïon, vers son RIB. Brancher ce RIB sur un autre compte Stripe ferait de ce compte le vendeur : son chiffre d'affaires et sa TVA ne correspondraient plus aux encaissements.
         </p>
         <p className="mt-3 text-ink/80">
-          La part se prélève avec Stripe Connect, en frais d'application. Le client paie le compte de Zaïon. Stripe reverse automatiquement le taux déjà réglé ici, calculé sur le HT, vers le compte plateforme. Elle doit accepter cette liaison. Le compte Stripe déjà ouvert sur cette machine est Lead Hunter : il ne doit pas encaisser Zaïon. SumUp reste le terminal de carte, sans partage automatique.
+          La part se prélève avec Stripe Connect, en frais d'application. Le client paie le compte de Zaïon. Stripe reverse automatiquement le taux déjà réglé ici, calculé sur le HT, vers le compte plateforme. Elle doit accepter cette liaison. Le compte Stripe déjà ouvert sur cette machine est Lead Hunter : il ne doit pas encaisser Zaïon. SumUp reste le terminal de carte, sans partage automatique. Le lien à envoyer à un client, déjà créé ou à créer, est dans les commandes de l'atelier.
         </p>
         <p className="mt-3 text-ink/60">
           Tant que Connect n'est pas relié, la part reste une ligne de pilotage, réglée à part par facture ou virement.

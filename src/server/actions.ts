@@ -37,7 +37,7 @@ import { isPersonalHome } from "@/lib/places";
 import { assemblyQuestions } from "@/lib/questions";
 import { clearSession, getSession, homeFor, setSession, type Session } from "@/lib/session";
 
-export type ActionState = { error?: string; ok?: string; step?: "code"; email?: string } | null;
+export type ActionState = { error?: string; ok?: string; step?: "code"; email?: string; paymentUrl?: string } | null;
 
 function uid(prefix: string) {
   return `${prefix}_${crypto.randomUUID().slice(0, 10)}`;
@@ -222,14 +222,11 @@ export async function confirmPasswordCodeAction(_prev: ActionState, formData: Fo
 export async function changePasswordAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const session = await getSession();
   if (!session) redirect("/connexion");
-  const current = String(formData.get("current") ?? "");
   const next = String(formData.get("next") ?? "");
   if (next.length < 8) return { error: "Le nouveau mot de passe doit faire 8 caractères." };
   await ensureAuthSchema();
   const [user] = await db.select().from(users).where(eq(users.id, session.id));
-  if (!user || !(await bcrypt.compare(current, user.passwordHash))) {
-    return { error: "Mot de passe actuel incorrect." };
-  }
+  if (!user) return { error: "Compte introuvable." };
   const sent = await issueCode({
     email: user.email,
     purpose: "password",
@@ -860,6 +857,139 @@ export async function saveOrderNote(formData: FormData) {
   const id = clean(formData.get("id"), 40);
   await db.update(orders).set({ atelierNote: clean(formData.get("atelierNote"), 1200) || null }).where(eq(orders.id, id));
   revalidatePath("/atelier/commandes");
+}
+
+function eurosToCents(raw: string) {
+  const normalized = raw.replace(/\s/g, "").replace(",", ".");
+  if (!/^\d+(\.\d{1,2})?$/.test(normalized)) return null;
+  return Math.round(Number(normalized) * 100);
+}
+
+async function openPaymentLink(order: { id: string; number: string; customerEmail: string; totalCents: number }, lineName: string) {
+  const headerList = await headers();
+  const host = headerList.get("x-forwarded-host") || headerList.get("host") || "zaion-upcycling.com";
+  const proto = headerList.get("x-forwarded-proto") || "https";
+  return createZaionCheckout({
+    order: { ...order, lineName },
+    origin: `${proto}://${host}`,
+  });
+}
+
+export async function requestClientPayment(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  await staff();
+  await ensureCatalog();
+  if (!zaionStripeReady()) {
+    return { error: "Le lien Stripe attend la clé ZAION_STRIPE_SECRET_KEY du compte de Zaïon." };
+  }
+  const clientId = clean(formData.get("clientId"), 40);
+  const label = clean(formData.get("label"), 160);
+  const totalCents = eurosToCents(clean(formData.get("amount"), 20));
+  if (!label) return { error: "Indiquez ce que le client paie." };
+  if (totalCents == null || totalCents < 50) return { error: "Le montant carte minimum est 0,50 €." };
+
+  let name = clean(formData.get("name"), 120);
+  let email = clean(formData.get("email"), 180).toLowerCase();
+  let phone = clean(formData.get("phone"), 40);
+  let userId: string | null = null;
+
+  if (clientId && clientId !== "nouveau") {
+    const [client] = await db.select().from(users).where(eq(users.id, clientId));
+    if (!client) return { error: "Ce client n'existe plus." };
+    userId = client.id;
+    name = client.name;
+    email = client.email;
+    phone = phone || client.phone || "";
+  } else {
+    if (!name || !email.includes("@")) return { error: "Nom et e-mail du nouveau client sont requis." };
+    const [existing] = await db.select().from(users).where(eq(users.email, email));
+    if (existing) {
+      userId = existing.id;
+      name = existing.name;
+    } else {
+      userId = uid("usr");
+      await db.insert(users).values({
+        id: userId,
+        email,
+        name,
+        passwordHash: await bcrypt.hash(randomBytes(24).toString("hex"), 10),
+        role: "client",
+        phone: phone || null,
+        authProvider: "password",
+        emailVerified: true,
+      });
+    }
+  }
+
+  const prefs = await readSettings();
+  const { htCents, vatCents } = splitTtc(totalCents, prefs.vatRate);
+  const commissionCents = Math.round((htCents * prefs.commissionRate) / 100);
+  const [{ value }] = await db.select({ value: count() }).from(orders);
+  const id = uid("ord");
+  const number = `Z-2026-${String(Number(value) + 1).padStart(4, "0")}`;
+  await db.insert(orders).values({
+    id,
+    number,
+    userId,
+    customerName: name,
+    customerEmail: email,
+    phone: phone || null,
+    address: "Lien de paiement envoyé par l'atelier",
+    status: "recue",
+    subtotalCents: htCents,
+    vatCents,
+    totalCents,
+    commissionCents,
+    commissionRate: prefs.commissionRate,
+    note: label,
+  });
+  await db.insert(orderItems).values({
+    id: uid("itm"),
+    orderId: id,
+    productSlug: "reglement",
+    name: label,
+    qty: 1,
+    unitCents: totalCents,
+  });
+  await touchLead({ name, email, phone, source: "paiement", status: "devis", notes: `${number} · ${label}` });
+
+  const checkout = await openPaymentLink({ id, number, customerEmail: email, totalCents }, label);
+  if (!checkout.url) {
+    revalidatePath("/atelier/commandes");
+    return { error: checkout.error || "La commande est créée, le lien Stripe n'a pas pu s'ouvrir." };
+  }
+  let mailed = false;
+  if (ionosReady()) {
+    try {
+      const sent = await sendMailboxMail({
+        to: email,
+        subject: `Paiement Zaïon Upcycling · ${number}`,
+        text: `Bonjour ${name},\n\nZaïon vous adresse un paiement de ${(totalCents / 100).toFixed(2).replace(".", ",")} € pour : ${label}.\n\nRéglez-le ici :\n${checkout.url}\n\n${company.name}\n${company.email}`,
+      });
+      mailed = sent.sent;
+    } catch {
+      mailed = false;
+    }
+  }
+  revalidatePath("/atelier/commandes");
+  revalidatePath("/atelier/contacts");
+  return {
+    ok: mailed
+      ? `Lien envoyé à ${email}. La commande ${number} compte dans le réel seulement une fois payée.`
+      : `Lien prêt pour ${name}. Copiez-le : la boîte du site n'envoie pas encore les e-mails. La commande ${number} compte dans le réel seulement une fois payée.`,
+    paymentUrl: checkout.url,
+  };
+}
+
+export async function staffPaymentLink(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  await staff();
+  await ensureCatalog();
+  const id = clean(formData.get("id"), 40);
+  const [order] = await db.select().from(orders).where(eq(orders.id, id));
+  if (!order || order.status === "annulee" || order.paymentRef) return { error: "Cette commande n'attend plus de paiement." };
+  const [item] = await db.select().from(orderItems).where(eq(orderItems.orderId, id));
+  const checkout = await openPaymentLink(order, item?.name || `Commande ${order.number}`);
+  if (!checkout.url) return { error: checkout.error || "Stripe n'a pas ouvert le lien." };
+  return { ok: "Lien prêt à envoyer.", paymentUrl: checkout.url };
 }
 
 export async function startCardPayment(formData: FormData) {

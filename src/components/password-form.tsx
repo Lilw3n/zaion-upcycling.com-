@@ -20,12 +20,14 @@ export function PasswordForm() {
   }
 
   return (
-    <form action={action} className="grid gap-2 md:grid-cols-3">
-      <input name="current" type="password" required placeholder="Mot de passe actuel" className="field" autoComplete="current-password" />
-      <input name="next" type="password" minLength={8} required placeholder="Nouveau mot de passe" className="field" autoComplete="new-password" />
-      <button className="btn" disabled={pending}>{pending ? "Envoi…" : "Recevoir le code"}</button>
-      {state?.error && <p className="text-sm text-rust md:col-span-3">{state.error}</p>}
-      {confirmState?.ok && <p className="text-sm text-moss md:col-span-3">{confirmState.ok}</p>}
+    <form action={action} className="grid gap-2">
+      <p className="text-sm text-ink/70">L'ancien mot de passe n'est pas demandé. Un code à 6 chiffres part sur l'adresse du compte, puis le nouveau mot de passe est enregistré.</p>
+      <div className="grid gap-2 md:grid-cols-[1fr_auto]">
+        <input name="next" type="password" minLength={8} required placeholder="Nouveau mot de passe" className="field" autoComplete="new-password" />
+        <button className="btn" disabled={pending}>{pending ? "Envoi…" : "Recevoir le code"}</button>
+      </div>
+      {state?.error && <p className="text-sm text-rust">{state.error}</p>}
+      {confirmState?.ok && <p className="text-sm text-moss">{confirmState.ok}</p>}
     </form>
   );
 }

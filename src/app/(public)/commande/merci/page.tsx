@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { eq } from "drizzle-orm";
+import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import { ensureCatalog } from "@/db/ensure";
-import { orders } from "@/db/schema";
+import { orders, revenues } from "@/db/schema";
+import { readSettings } from "@/lib/finance";
 import { readZaionCheckout } from "@/lib/stripe";
 
 export const metadata: Metadata = { title: "Paiement" };
@@ -18,6 +20,23 @@ export default async function PaymentThanksPage({ searchParams }: { searchParams
     const [order] = await db.select().from(orders).where(eq(orders.id, orderId));
     if (order && order.status === "recue") {
       await db.update(orders).set({ status: "confirmee", paymentRef: checkout.id }).where(eq(orders.id, order.id));
+      const [already] = await db.select({ id: revenues.id }).from(revenues).where(eq(revenues.orderId, order.id));
+      if (!already) {
+        const prefs = await readSettings();
+        await db.insert(revenues).values({
+          id: `rev_${crypto.randomUUID().slice(0, 10)}`,
+          label: `Commande ${order.number}`,
+          occurredOn: new Date().toISOString().slice(0, 10),
+          amountHtCents: order.subtotalCents,
+          vatRate: prefs.vatRate,
+          commissionCents: order.commissionCents,
+          orderId: order.id,
+          voided: false,
+        });
+        revalidatePath("/atelier");
+        revalidatePath("/atelier/revenus");
+        revalidatePath("/pilotage");
+      }
     }
     paid = Boolean(order);
   }

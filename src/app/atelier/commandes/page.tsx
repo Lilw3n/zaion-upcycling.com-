@@ -1,21 +1,24 @@
 import { desc } from "drizzle-orm";
 import { db } from "@/db";
 import { ensureCatalog } from "@/db/ensure";
-import { orderItems, orders } from "@/db/schema";
+import { orderItems, orders, users } from "@/db/schema";
 import { ExampleMark } from "@/components/example-mark";
 import { euros, formatDate, orderStatusLabel } from "@/lib/format";
 import { getSession } from "@/lib/session";
 import { readSettings } from "@/lib/finance";
 import { deleteExampleOrder, recordManualPayment, saveOrderNote, updateOrderStatus } from "@/server/actions";
+import { PaymentLinkButton, PaymentRequestForm } from "./payment-request";
 
 export default async function OrdersAdminPage() {
   await ensureCatalog();
-  const [rows, items, settings, session] = await Promise.all([
+  const [rows, items, settings, session, people] = await Promise.all([
     db.select().from(orders).orderBy(desc(orders.createdAt)),
     db.select().from(orderItems),
     readSettings(),
     getSession(),
+    db.select({ id: users.id, name: users.name, email: users.email, role: users.role }).from(users),
   ]);
+  const clients = people.filter((person) => person.role === "client").map(({ id, name, email }) => ({ id, name, email }));
   const showCommission = session?.role === "superadmin" || settings.commissionVisible;
 
   return (
@@ -29,6 +32,7 @@ export default async function OrdersAdminPage() {
           Admin et super admin utilisent le même bouton.
         </p>
       </div>
+      <PaymentRequestForm clients={clients} />
       <div className="space-y-4">
         {rows.map((order) => (
           <article key={order.id} className="bg-foam p-4">
@@ -60,6 +64,7 @@ export default async function OrdersAdminPage() {
                 </li>
               ))}
             </ul>
+            {order.status !== "annulee" && !order.paymentRef && !order.example && <PaymentLinkButton orderId={order.id} />}
             {order.status !== "annulee" && (!order.paymentRef || order.paymentRef.startsWith("manuel")) && (
               <form action={recordManualPayment} className="mt-3 flex flex-wrap items-end gap-2">
                 <input type="hidden" name="id" value={order.id} />

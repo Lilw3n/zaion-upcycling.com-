@@ -5,6 +5,7 @@ type CheckoutOrder = {
   number: string;
   customerEmail: string;
   totalCents: number;
+  lineName?: string;
 };
 
 export async function createZaionCheckout(input: { order: CheckoutOrder; origin: string }) {
@@ -19,7 +20,7 @@ export async function createZaionCheckout(input: { order: CheckoutOrder; origin:
   body.set("line_items[0][quantity]", "1");
   body.set("line_items[0][price_data][currency]", "eur");
   body.set("line_items[0][price_data][unit_amount]", String(input.order.totalCents));
-  body.set("line_items[0][price_data][product_data][name]", `Commande ${input.order.number}`);
+  body.set("line_items[0][price_data][product_data][name]", input.order.lineName || `Commande ${input.order.number}`);
   const response = await fetch("https://api.stripe.com/v1/checkout/sessions", {
     method: "POST",
     headers: {
