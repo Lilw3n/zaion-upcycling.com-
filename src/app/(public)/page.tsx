@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { eq } from "drizzle-orm";
 import { categories } from "@/data/catalogue";
+import { googleRating, googleReviews } from "@/data/reviews";
 import { db } from "@/db";
 import { products } from "@/db/schema";
 import { ProductCard } from "@/components/product-card";
@@ -28,8 +29,8 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="mx-auto -mt-8 max-w-6xl px-4">
-        <form action="/boutique" className="grid gap-3 bg-foam p-4 shadow-sm md:grid-cols-[1fr_1fr_auto] md:items-end">
+      <section className="mx-auto mt-8 max-w-6xl px-4">
+        <form action="/boutique" className="grid gap-3 bg-white p-4 shadow-sm md:grid-cols-[1fr_1fr_auto] md:items-end">
           <label className="text-sm">
             De quel univers s'agit-il ?
             <select name="categorie" className="field mt-1">
@@ -112,6 +113,30 @@ export default async function HomePage() {
             <figcaption className="p-4 text-sm">Housses antifouling, avec K-ren : protéger les coques sans les traiter plus que nécessaire.</figcaption>
           </figure>
         </div>
+      </section>
+
+      <section className="mx-auto mt-20 max-w-6xl px-4">
+        <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <p className="text-xs uppercase tracking-[0.2em] text-ink/50">Google · {googleRating.score} / 5 · {googleRating.count} avis</p>
+            <h2 className="font-serif text-4xl">Ils en parlent</h2>
+          </div>
+          <a href={googleRating.href} target="_blank" rel="noopener noreferrer" className="text-sm underline">
+            Lire sur Google
+          </a>
+        </div>
+        <ul className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+          {googleReviews.map((review) => (
+            <li key={review.author} className="flex flex-col bg-foam p-5">
+              <p className="text-rust" aria-label="5 sur 5">★★★★★</p>
+              <blockquote className="mt-3 flex-1 text-[15px] leading-relaxed text-ink/85">« {review.text} »</blockquote>
+              <footer className="mt-4 text-sm">
+                <p className="font-semibold">{review.author}</p>
+                <p className="text-ink/55">{review.when}</p>
+              </footer>
+            </li>
+          ))}
+        </ul>
       </section>
 
       <section className="mx-auto mt-20 max-w-6xl bg-ink px-6 py-14 text-paper md:px-12">
