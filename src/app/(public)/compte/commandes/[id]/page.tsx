@@ -5,6 +5,8 @@ import { ClearCart } from "@/components/clear-cart";
 import { db } from "@/db";
 import { orderItems, orders } from "@/db/schema";
 import { euros, formatDate, orderStatusLabel } from "@/lib/format";
+import { zaionStripeReady } from "@/lib/providers";
+import { startCardPayment } from "@/server/actions";
 import { getSession } from "@/lib/session";
 
 const steps = ["recue", "confirmee", "fabrication", "prete", "livree"];
@@ -14,12 +16,12 @@ export default async function OrderPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ neuf?: string }>;
+  searchParams: Promise<{ neuf?: string; carte?: string }>;
 }) {
   const session = await getSession();
   if (!session) redirect("/connexion");
   const { id } = await params;
-  const { neuf } = await searchParams;
+  const { neuf, carte } = await searchParams;
   const [order] = await db.select().from(orders).where(eq(orders.id, id));
   if (!order || (order.userId !== session.id && session.role === "client")) notFound();
   const items = await db.select().from(orderItems).where(eq(orderItems.orderId, order.id));
@@ -51,8 +53,18 @@ export default async function OrderPage({
       <dl className="mt-6 space-y-1 text-sm">
         <div className="flex justify-between"><dt>HT</dt><dd>{euros(order.subtotalCents)}</dd></div>
         <div className="flex justify-between"><dt>TVA</dt><dd>{euros(order.vatCents)}</dd></div>
+        {order.discountCents > 0 && <div className="flex justify-between"><dt>Remise {order.promoCode}</dt><dd>−{euros(order.discountCents)}</dd></div>}
         <div className="flex justify-between text-base font-semibold"><dt>TTC</dt><dd>{euros(order.totalCents)}</dd></div>
       </dl>
+      {order.paymentRef?.startsWith("manuel") && <p className="mt-4 text-sm text-moss">Paiement manuel enregistré par l'atelier.</p>}
+      {zaionStripeReady() && !order.paymentRef && order.status !== "annulee" && (
+        <form action={startCardPayment} className="mt-6">
+          <input type="hidden" name="id" value={order.id} />
+          <button className="btn">Payer par carte</button>
+        </form>
+      )}
+      {carte === "attente" && <p className="mt-4 text-sm">La commande est notée. Le paiement carte attend la clé Stripe de Zaïon.</p>}
+      {carte === "echec" && <p className="mt-4 text-sm text-rust">Le paiement carte n'a pas pu s'ouvrir. La commande reste enregistrée.</p>}
       <p className="mt-6 text-sm text-ink/70">{order.address}</p>
       {order.note && <p className="mt-2 text-sm">{order.note}</p>}
     </div>

@@ -6,6 +6,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { ensureAuthSchema } from "@/db/ensure";
 import { users, type Role } from "@/db/schema";
+import { roleForEmail } from "@/lib/access";
 import { googleReady, safeNext } from "@/lib/providers";
 import { homeFor, setSession } from "@/lib/session";
 
@@ -59,32 +60,31 @@ export async function GET(request: Request) {
   const [byEmail] = byGoogle ? [byGoogle] : await db.select().from(users).where(eq(users.email, email));
   let account = byEmail;
 
-  if (account && !account.googleSub) {
-    await db.update(users).set({ googleSub: profile.sub, authProvider: "google" }).where(eq(users.id, account.id));
+  const role = (account && roleForEmail(email) === "client" ? account.role : roleForEmail(email)) as Role;
+  if (account) {
+    await db.update(users).set({
+      googleSub: profile.sub,
+      authProvider: "google",
+      emailVerified: true,
+      role,
+    }).where(eq(users.id, account.id));
   }
   if (!account) {
     const id = `usr_${crypto.randomUUID().slice(0, 10)}`;
-    const role = roleForEmail(email);
     const name = profile.name || email;
     await db.insert(users).values({
       id,
       email,
       name,
       role,
+      emailVerified: true,
       googleSub: profile.sub,
       authProvider: "google",
       passwordHash: await bcrypt.hash(randomBytes(24).toString("hex"), 10),
     });
-    account = { id, email, name, role } as typeof account;
+    account = { id, email, name, role, emailVerified: true } as typeof account;
   }
   if (!account) return fail("google");
-  const role = account.role as Role;
   await setSession({ id: account.id, email: account.email, name: account.name, role });
   return NextResponse.redirect(new URL(next || homeFor(role), url.origin));
-}
-
-function roleForEmail(email: string): Role {
-  if (email === (process.env.SUPERADMIN_EMAIL || "").toLowerCase()) return "superadmin";
-  if (email === (process.env.ATELIER_EMAIL || "").toLowerCase()) return "atelier";
-  return "client";
 }

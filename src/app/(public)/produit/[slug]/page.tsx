@@ -4,20 +4,24 @@ import { notFound } from "next/navigation";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { products } from "@/db/schema";
-import { categoryLabel, euros, unitOf } from "@/lib/format";
+import { categoryLabel, euros, productUnit } from "@/lib/format";
 import { AddButton } from "@/components/add-button";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   const [product] = await db.select().from(products).where(eq(products.slug, slug));
-  return { title: product?.name ?? "Pièce" };
+  return {
+    title: product?.name ?? "Pièce",
+    description: product?.summary,
+    alternates: product ? { canonical: `/produit/${product.slug}` } : undefined,
+  };
 }
 
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const [product] = await db.select().from(products).where(eq(products.slug, slug));
   if (!product || !product.active) notFound();
-  const unit = unitOf(product.description);
+  const unit = productUnit(product);
 
   return (
     <div className="mx-auto grid max-w-6xl gap-10 px-4 py-12 md:grid-cols-2">
@@ -32,7 +36,12 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             <p className="text-sm text-ink/40 line-through">{euros(product.compareAtCents)}</p>
           )}
           <p className="text-3xl font-semibold">{product.priceCents == null ? "Sur devis" : euros(product.priceCents)}</p>
-          {product.priceCents != null && <p className="text-sm text-ink/60">TTC par {unit}. La quantité du panier correspond aux {unit}s commandés.</p>}
+          {product.priceCents != null && (
+            <p className="text-sm text-ink/60">
+              {product.priceHtCents != null ? `${euros(product.priceHtCents)} HT · ` : ""}
+              {euros(product.priceCents)} TTC / {unit}. La quantité du panier correspond à cette unité.
+            </p>
+          )}
         </div>
         <p className="prose-copy mt-6 text-ink/80">{product.description}</p>
         <div className="mt-8 flex flex-wrap gap-3">

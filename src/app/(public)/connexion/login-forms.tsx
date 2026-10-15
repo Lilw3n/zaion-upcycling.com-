@@ -3,10 +3,10 @@
 import Link from "next/link";
 import { Suspense, useActionState } from "react";
 import { useSearchParams } from "next/navigation";
-import { loginAction, magicLinkAction, type ActionState } from "@/server/actions";
+import { confirmPasswordCodeAction, loginAction, requestPasswordCodeAction, type ActionState } from "@/server/actions";
 
 const errors: Record<string, string> = {
-  google: "La connexion Google n'est pas encore reliée au compte de l'atelier.",
+  google: "La connexion Google n'a pas abouti. Réessayez, ou utilisez le mot de passe.",
   lien: "Ce lien a expiré ou a déjà été utilisé.",
 };
 
@@ -23,38 +23,53 @@ function Forms({ googleReady, ionosReady }: { googleReady: boolean; ionosReady: 
   const next = params.get("next") ?? "";
   const notice = errors[params.get("erreur") ?? ""];
   const [passwordState, passwordAction, passwordPending] = useActionState(loginAction, null as ActionState);
-  const [linkState, linkAction, linkPending] = useActionState(magicLinkAction, null as ActionState);
+  const [codeState, codeAction, codePending] = useActionState(requestPasswordCodeAction, null as ActionState);
+  const [confirmState, confirmAction, confirmPending] = useActionState(confirmPasswordCodeAction, null as ActionState);
+  const email = confirmState?.email || codeState?.email || "";
+  const showCode = Boolean(email) && (codeState?.step === "code" || confirmState?.step === "code") && !confirmState?.ok;
 
   return (
     <div className="mt-8 space-y-8">
       {notice && <p className="text-sm text-rust">{notice}</p>}
       <form action={passwordAction} className="grid gap-3">
         <input type="hidden" name="next" value={next} />
-        <label>E-mail<input name="email" type="email" required className="field" /></label>
-        <label>Mot de passe<input name="password" type="password" required className="field" /></label>
+        <label>E-mail<input name="email" type="email" required className="field" autoComplete="username" /></label>
+        <label>Mot de passe<input name="password" type="password" required className="field" autoComplete="current-password" /></label>
         {passwordState?.error && <p className="text-sm text-rust">{passwordState.error}</p>}
         <button className="btn" disabled={passwordPending}>{passwordPending ? "Connexion…" : "Entrer"}</button>
       </form>
 
-      <form action={linkAction} className="grid gap-3 border-t border-line pt-6">
-        <p className="text-sm font-semibold">Lien par e-mail</p>
+      <div className="grid gap-3 border-t border-line pt-6">
+        <p className="text-sm font-semibold">Code par e-mail</p>
         <p className="text-sm text-ink/65">
           {ionosReady
-            ? "Un lien est envoyé depuis la messagerie IONOS de l'atelier."
-            : "Prévu sur la boîte IONOS de contact@zaion-upcycling.com, après le transfert depuis l'hébergeur actuel."}
+            ? "Pour choisir ou retrouver un mot de passe, un code à 6 chiffres part sur l'adresse du compte."
+            : "Le code partira depuis contact@zaion-upcycling.com dès que la boîte sera reliée au serveur."}
         </p>
-        <label>E-mail<input name="email" type="email" required className="field" /></label>
-        {linkState?.error && <p className="text-sm text-rust">{linkState.error}</p>}
-        {linkState?.ok && <p className="text-sm text-moss">{linkState.ok}</p>}
-        <button className="btn-line" disabled={linkPending}>{linkPending ? "Envoi…" : "Recevoir un lien"}</button>
-      </form>
+        {showCode ? (
+          <form action={confirmAction} className="grid gap-3">
+            <input type="hidden" name="email" value={email} />
+            <label>Code<input name="code" inputMode="numeric" autoComplete="one-time-code" required className="field" /></label>
+            <label>Nouveau mot de passe<input name="password" type="password" minLength={8} required className="field" autoComplete="new-password" /></label>
+            {confirmState?.error && <p className="text-sm text-rust">{confirmState.error}</p>}
+            <button className="btn" disabled={confirmPending}>{confirmPending ? "Vérification…" : "Enregistrer et entrer"}</button>
+          </form>
+        ) : (
+          <form action={codeAction} className="grid gap-3">
+            <label>E-mail<input name="email" type="email" required className="field" /></label>
+            {codeState?.error && <p className="text-sm text-rust">{codeState.error}</p>}
+            {codeState?.ok && <p className="text-sm text-moss">{codeState.ok}</p>}
+            <button className="btn-line" disabled={codePending}>{codePending ? "Envoi…" : "Recevoir un code"}</button>
+          </form>
+        )}
+      </div>
 
       <div className="border-t border-line pt-6">
         <p className="text-sm font-semibold">Google</p>
         <p className="mt-1 text-sm text-ink/65">
           {googleReady
-            ? "Le compte Google de l'atelier est relié."
-            : "Le bouton est en place. Il s'ouvrira quand le compte Google de Zaïon sera relié."}
+            ? "Le compte Google ouvre l'espace correspondant à son adresse."
+            : "Le bouton s'ouvrira quand l'identifiant Google du site sera enregistré sur le serveur."}
         </p>
         {googleReady ? (
           <a className="btn mt-3 bg-white text-ink" href={`/api/auth/google?next=${encodeURIComponent(next)}`}>
@@ -67,7 +82,7 @@ function Forms({ googleReady, ionosReady }: { googleReady: boolean; ionosReady: 
         )}
       </div>
       <p className="text-sm">
-        Pas encore de compte ? <Link href="/inscription" className="underline">Créer un accès client</Link>
+        Pas encore de compte ? <Link href="/inscription" className="underline">Créer un accès</Link>
       </p>
     </div>
   );

@@ -2,22 +2,24 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { and, eq } from "drizzle-orm";
 import { categories } from "@/data/catalogue";
-import { stories } from "@/data/stories";
 import { db } from "@/db";
 import { products } from "@/db/schema";
 import { ProductCard } from "@/components/product-card";
+import { readSiteCopy, textToBlocks } from "@/lib/site-copy";
 import Link from "next/link";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   const category = categories.find((item) => item.slug === slug);
-  return { title: category?.label ?? "Univers", description: stories[slug]?.kicker };
+  const copy = await readSiteCopy();
+  return { title: category?.label ?? "Univers", description: copy.universes[slug]?.kicker };
 }
 
 export default async function UniversePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const category = categories.find((item) => item.slug === slug);
-  const story = stories[slug];
+  const copy = await readSiteCopy();
+  const story = copy.universes[slug];
   if (!category || !story) notFound();
   const rows = await db.select().from(products).where(and(eq(products.category, slug), eq(products.active, true)));
 
@@ -35,7 +37,7 @@ export default async function UniversePage({ params }: { params: Promise<{ slug:
       <div className="mx-auto max-w-6xl px-4 py-12">
         <h2 className="max-w-3xl font-serif text-4xl">{story.title}</h2>
         <div className="mt-6 max-w-3xl space-y-4 text-ink/80">
-          {story.blocks.map((block, index) => {
+          {textToBlocks(story.body).map((block, index) => {
             if (block.kind === "h") return <h3 key={index} className="pt-4 font-serif text-2xl text-ink">{block.text}</h3>;
             if (block.kind === "list") {
               return (

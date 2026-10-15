@@ -6,7 +6,7 @@ export const metadata: Metadata = { title: "Cookies" };
 export default function CookiesPage() {
   return (
     <Legal title="Cookies">
-      <p>Le site n'utilise pas de cookie publicitaire ni de mesure d'audience. Aucun traceur n'est déposé avant votre visite pour le compte d'un tiers.</p>
+      <p>Google Tag Manager (GTM-MB75LQ4V) se charge sur chaque page. Les balises configurées dans ce conteneur, par exemple une mesure d'audience, peuvent déposer des cookies Google. Leur durée et leur finalité dépendent des balises actives dans le conteneur.</p>
       <h2>Cookie indispensable</h2>
       <p>Le cookie <span className="font-medium">zaion_session</span> est déposé lorsque vous vous connectez. Il maintient la session pendant quatorze jours, en httpOnly. Il est nécessaire pour accéder au compte, à l'atelier ou au pilotage. Il ne sert pas à vous suivre d'un site à l'autre.</p>
       <h2>Mémoire du navigateur</h2>

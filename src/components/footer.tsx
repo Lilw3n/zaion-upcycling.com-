@@ -28,6 +28,7 @@ export async function Footer() {
             <li><Link href="/devis">Demander un devis</Link></li>
             <li><Link href="/a-propos">L'atelier</Link></li>
             <li><Link href="/contact">Contact</Link></li>
+            <li><Link href="/partenaires">Assurance et crédit</Link></li>
             <li><Link href="/compte">Suivre une commande</Link></li>
           </ul>
         </div>
@@ -51,6 +52,8 @@ export async function Footer() {
             Site développé par <a className="underline" href="https://www.leadsopportunities.fr/">Wendy Buchet · Leads Opportunities</a>
             {" · "}
             <a className="underline" href="mailto:contact@leadsopportunities.fr">Devis création de site</a>
+            {" · "}
+            <Link className="underline" href="/partenaires">Assurance, mutuelle et crédit</Link>
           </span>
         </div>
       </div>

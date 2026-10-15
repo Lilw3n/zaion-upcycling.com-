@@ -4,7 +4,7 @@ import { db } from "@/db";
 import { charges, revenues, users } from "@/db/schema";
 import { euros } from "@/lib/format";
 import { readSettings, summarize } from "@/lib/finance";
-import { googleReady, ionosReady } from "@/lib/providers";
+import { googleReady, ionosReady, zaionStripePublishableReady, zaionStripeReady } from "@/lib/providers";
 import { googleServiceAddress } from "@/lib/places";
 import { CommissionForm } from "./commission-form";
 import { unpublishAtelier } from "@/server/actions";
@@ -82,12 +82,27 @@ export default async function PilotagePage() {
         <p className="mt-3 text-ink/60">
           Tant que Connect n'est pas relié, la part reste une ligne de pilotage, réglée à part par facture ou virement.
         </p>
+        <p className="mt-3 text-ink/80">
+          {zaionStripeReady()
+            ? "Le paiement carte est ouvert : la clé secrète encaisse sur le compte Stripe de Zaïon."
+            : "Le paiement carte attend ZAION_STRIPE_SECRET_KEY, la clé secrète du compte Stripe de Zaïon. Ce n'est pas le compte Lead Hunter de cette machine."}
+          {zaionStripePublishableReady()
+            ? " La clé publiable est enregistrée."
+            : " La clé publiable se range dans NEXT_PUBLIC_ZAION_STRIPE_PUBLISHABLE_KEY."}
+        </p>
+        <p className="mt-3 text-ink/80">
+          Paiement manuel, sans débit carte :{" "}
+          <a className="underline" href="https://dashboard.stripe.com/settings/billing/invoice" target="_blank" rel="noopener noreferrer">ouvrir le réglage Stripe</a>.
+          Sur le site, admin et super admin le notent dans <a className="underline" href="/atelier/commandes">les commandes</a>.
+        </p>
       </section>
       <section className="bg-foam p-5">
         <h2 className="font-semibold">Connexions à brancher</h2>
         <ul className="mt-3 space-y-2 text-sm">
-          <li>Messagerie IONOS : {ionosReady() ? "reliée, les liens de connexion partent." : "en attente du transfert de la boîte contact@zaion-upcycling.com depuis l'hébergeur actuel. Variables IONOS_SMTP_USER et IONOS_SMTP_PASSWORD."}</li>
-          <li>Google : {googleReady() ? "relié." : "en attente du compte Google de l'atelier. Variables GOOGLE_CLIENT_ID et GOOGLE_CLIENT_SECRET. URI de redirection : /api/auth/google/callback."}</li>
+          <li>Messagerie IONOS : {ionosReady() ? "reliée, les codes de vérification partent." : "en attente du mot de passe de la boîte contact@zaion-upcycling.com. Variables IONOS_SMTP_USER et IONOS_SMTP_PASSWORD."}</li>
+          <li>Google : {googleReady() ? "relié. L'adresse ouvre le rôle prévu : super admin ou admin." : "en attente de GOOGLE_CLIENT_ID et GOOGLE_CLIENT_SECRET. URI de redirection : /api/auth/google/callback."}</li>
+          <li>Stripe, clé publiable : {zaionStripePublishableReady() ? "enregistrée (NEXT_PUBLIC_ZAION_STRIPE_PUBLISHABLE_KEY)." : "en attente de NEXT_PUBLIC_ZAION_STRIPE_PUBLISHABLE_KEY, elle commence par pk_."}</li>
+          <li>Stripe, clé secrète : {zaionStripeReady() ? "enregistrée (ZAION_STRIPE_SECRET_KEY). Le paiement carte est ouvert." : "en attente de ZAION_STRIPE_SECRET_KEY. Clé secrète sk_ ou clé restreinte rk_."}</li>
         </ul>
       </section>
       <section className="bg-foam p-5">

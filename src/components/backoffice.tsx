@@ -13,6 +13,8 @@ const links = [
   { href: "/atelier/charges", label: "Charges" },
   { href: "/atelier/commandes", label: "Commandes" },
   { href: "/atelier/produits", label: "Pièces" },
+  { href: "/atelier/offres", label: "Promos et parrainage" },
+  { href: "/atelier/site", label: "Textes du site" },
 ];
 
 export function Backoffice({
@@ -39,7 +41,7 @@ export function Backoffice({
             <NavLink href="/pilotage" active={pathname === "/pilotage"}>Ma part</NavLink>
           )}
           {links.map((link) => (
-            <NavLink key={link.href} href={link.href} active={pathname === link.href}>
+            <NavLink key={link.href} href={link.href} active={link.href === "/atelier" ? pathname === "/atelier" : pathname.startsWith(link.href)}>
               {link.label}
             </NavLink>
           ))}

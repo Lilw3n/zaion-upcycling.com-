@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { desc, eq } from "drizzle-orm";
+import { PasswordForm } from "@/components/password-form";
+import { ProfileForm } from "@/components/profile-form";
 import { db } from "@/db";
-import { orders } from "@/db/schema";
+import { orders, users } from "@/db/schema";
 import { euros, formatDate, orderStatusLabel } from "@/lib/format";
 import { getSession } from "@/lib/session";
 import { redirect } from "next/navigation";
@@ -9,6 +11,7 @@ import { redirect } from "next/navigation";
 export default async function AccountPage() {
   const session = await getSession();
   if (!session) redirect("/connexion?next=/compte");
+  const [account] = await db.select().from(users).where(eq(users.id, session.id));
   const rows = await db.select().from(orders).where(eq(orders.userId, session.id)).orderBy(desc(orders.createdAt));
 
   return (
@@ -16,6 +19,13 @@ export default async function AccountPage() {
       <p className="text-xs uppercase tracking-[0.18em] text-ink/50">Espace client</p>
       <h1 className="font-serif text-5xl">Bonjour {session.name}</h1>
       <p className="mt-3 text-ink/70">Vos commandes, de la réception à la livraison.</p>
+      <div className="mt-8 grid gap-4">
+        <ProfileForm name={account?.name ?? session.name} phone={account?.phone ?? ""} address={account?.address ?? ""} />
+        <div className="bg-foam p-5">
+          <h2 className="font-semibold">Mot de passe</h2>
+          <div className="mt-3"><PasswordForm /></div>
+        </div>
+      </div>
       <div className="mt-8 space-y-3">
         {rows.map((order) => (
           <Link key={order.id} href={`/compte/commandes/${order.id}`} className="grid gap-2 bg-foam p-4 md:grid-cols-[1fr_auto_auto] md:items-center">

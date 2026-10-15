@@ -1,10 +1,10 @@
 import Link from "next/link";
 import type { Product } from "@/db/schema";
-import { euros, unitOf } from "@/lib/format";
+import { euros, productUnit } from "@/lib/format";
 import { AddButton } from "./add-button";
 
 export function ProductCard({ product }: { product: Product }) {
-  const unit = unitOf(product.description);
+  const unit = productUnit(product);
   return (
     <article className="flex flex-col bg-foam">
       <Link href={`/produit/${product.slug}`} className="block bg-sand">

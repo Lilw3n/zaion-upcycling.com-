@@ -1,30 +1,36 @@
+import Link from "next/link";
 import { db } from "@/db";
+import { ensureCatalog } from "@/db/ensure";
 import { products } from "@/db/schema";
-import { categoryLabel } from "@/lib/format";
-import { updateProduct } from "@/server/actions";
+import { categoryLabel, euros, productUnit } from "@/lib/format";
 
 export default async function ProductsAdminPage() {
+  await ensureCatalog();
   const rows = await db.select().from(products);
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-serif text-4xl">Pièces</h1>
-        <p className="mt-2 text-sm text-ink/70">Prix TTC affiché en boutique. Décochez « en vente » pour un article sur devis uniquement.</p>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="font-serif text-4xl">Pièces</h1>
+          <p className="mt-2 max-w-2xl text-sm text-ink/70">
+            Ajouter une pièce, ouvrir une ligne pour modifier le prix, la photo et le texte, puis la supprimer depuis sa fiche. La boutique affiche toujours le TTC.
+          </p>
+        </div>
+        <Link href="/atelier/produits/nouveau" className="btn">Ajouter une pièce</Link>
       </div>
       <div className="space-y-3">
         {rows.map((product) => (
-          <form key={product.id} action={updateProduct} className="grid items-center gap-3 bg-foam p-3 md:grid-cols-[72px_1fr_140px_auto_auto]">
+          <Link key={product.id} href={`/atelier/produits/${product.id}`} className="grid items-center gap-3 bg-foam p-3 md:grid-cols-[72px_1fr_auto]">
             <img src={product.image} alt="" className="h-16 w-16 object-cover" />
             <div>
               <p className="font-medium">{product.name}</p>
-              <p className="text-xs text-ink/50">{categoryLabel[product.category] ?? product.category}</p>
+              <p className="text-xs text-ink/50">{categoryLabel[product.category] ?? product.category} · {product.active ? "visible" : "masquée"}</p>
             </div>
-            <input type="hidden" name="id" value={product.id} />
-            <input name="price" defaultValue={product.priceCents != null ? (product.priceCents / 100).toString() : ""} placeholder="Prix TTC" className="field" />
-            <label className="text-sm"><input type="checkbox" name="purchasable" defaultChecked={product.purchasable} /> En vente</label>
-            <label className="text-sm"><input type="checkbox" name="active" defaultChecked={product.active} /> Visible</label>
-            <button className="btn md:col-start-5">Sauver</button>
-          </form>
+            <p className="text-sm">
+              {product.priceCents == null ? "Sur devis" : `${euros(product.priceCents)} TTC / ${productUnit(product)}`}
+              {product.priceHtCents != null && product.priceCents != null ? ` · ${euros(product.priceHtCents)} HT` : ""}
+            </p>
+          </Link>
         ))}
       </div>
     </div>

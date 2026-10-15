@@ -29,6 +29,11 @@ export default async function AtelierHome() {
           Devis, contacts, chiffre d'affaires, TVA et charges. Les montants d'ouverture sont à remplacer par vos relevés.
         </p>
       </div>
+      <div className="flex flex-wrap gap-3">
+        <Link href="/atelier/produits/nouveau" className="btn">Ajouter une pièce</Link>
+        <Link href="/atelier/commandes" className="btn-line">Commandes</Link>
+        <Link href="/atelier/offres" className="btn-line">Promos et parrainage</Link>
+      </div>
       <div className="grid gap-3 md:grid-cols-4">
         <Stat label="CA HT" value={euros(stats.ht)} />
         <Stat label="TVA" value={euros(stats.vat)} />

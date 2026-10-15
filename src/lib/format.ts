@@ -12,11 +12,25 @@ export function formatDate(value: Date | string) {
   return new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium" }).format(date);
 }
 
+export const priceUnits = [
+  { value: "pièce", label: "la pièce" },
+  { value: "m²", label: "le m²" },
+  { value: "m³", label: "le m³" },
+  { value: "ml", label: "le mètre linéaire" },
+  { value: "heure", label: "l'heure" },
+];
+
 export function unitOf(description: string) {
   const text = description.toLowerCase();
   if (text.includes("m³") || text.includes("m3") || text.includes("mètre cube")) return "m³";
   if (text.includes("m²") || text.includes("m2") || text.includes("mètre carré")) return "m²";
+  if (text.includes("mètre linéaire") || text.includes("par mètre")) return "ml";
+  if (text.includes("heure")) return "heure";
   return "pièce";
+}
+
+export function productUnit(product: { unit?: string | null; description: string }) {
+  return product.unit || unitOf(product.description);
 }
 
 export function splitTtc(totalCents: number, vatRate: number) {

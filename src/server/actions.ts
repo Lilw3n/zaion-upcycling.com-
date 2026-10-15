@@ -7,30 +7,37 @@ import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
-import { ensureAuthSchema } from "@/db/ensure";
+import { ensureAuthSchema, ensureCatalog } from "@/db/ensure";
 import {
   authTokens,
   charges,
   leads,
   orderItems,
+  media,
   orders,
   products,
+  promos,
   quoteFields,
   quotes,
   revenues,
   users,
   type Role,
 } from "@/db/schema";
+import { roleForEmail } from "@/lib/access";
+import { consumeCode, issueCode } from "@/lib/codes";
 import { company } from "@/lib/company";
 import { splitTtc } from "@/lib/format";
 import { sendMailboxMail } from "@/lib/mail";
-import { ionosReady } from "@/lib/providers";
+import { ionosReady, zaionStripeReady } from "@/lib/providers";
+import { createZaionCheckout } from "@/lib/stripe";
 import { readSettings, setSetting } from "@/lib/finance";
+import { copyFromForm } from "@/lib/site-copy";
+import { categories } from "@/data/catalogue";
 import { isPersonalHome } from "@/lib/places";
 import { assemblyQuestions } from "@/lib/questions";
 import { clearSession, getSession, homeFor, setSession, type Session } from "@/lib/session";
 
-export type ActionState = { error?: string; ok?: string } | null;
+export type ActionState = { error?: string; ok?: string; step?: "code"; email?: string } | null;
 
 function uid(prefix: string) {
   return `${prefix}_${crypto.randomUUID().slice(0, 10)}`;
@@ -75,17 +82,29 @@ async function touchLead(input: { name: string; email: string; phone?: string; s
   });
 }
 
+async function openSession(user: { id: string; email: string; name: string; role: string }, next: string): Promise<never> {
+  const expected = roleForEmail(user.email);
+  const role = (expected === "client" ? user.role : expected) as Role;
+  if (role !== user.role) {
+    await db.update(users).set({ role }).where(eq(users.id, user.id));
+  }
+  await setSession({ id: user.id, email: user.email, name: user.name, role });
+  redirect(next.startsWith("/") ? next : homeFor(role));
+}
+
 export async function loginAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const email = clean(formData.get("email"), 180).toLowerCase();
   const password = String(formData.get("password") ?? "");
   const next = clean(formData.get("next"), 200);
+  await ensureAuthSchema();
   const [user] = await db.select().from(users).where(eq(users.email, email));
   if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
     return { error: "Identifiants incorrects." };
   }
-  const role = user.role as Role;
-  await setSession({ id: user.id, email: user.email, name: user.name, role });
-  redirect(next.startsWith("/") ? next : homeFor(role));
+  if (!user.emailVerified) {
+    return { error: "Confirmez d'abord l'adresse avec le code reçu par e-mail." };
+  }
+  return openSession(user, next);
 }
 
 export async function magicLinkAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
@@ -134,19 +153,70 @@ export async function registerAction(_prev: ActionState, formData: FormData): Pr
   if (!name || !email || password.length < 8) {
     return { error: "Nom, e-mail et mot de passe (8 caractères minimum) sont requis." };
   }
+  await ensureAuthSchema();
+  const [existing] = await db.select().from(users).where(eq(users.email, email));
+  if (existing) return { error: "Un compte existe déjà avec cet e-mail. Connectez-vous ou demandez un code pour le mot de passe." };
+  const sent = await issueCode({
+    email,
+    purpose: "signup",
+    payload: JSON.stringify({ name, phone, passwordHash: await bcrypt.hash(password, 10) }),
+  });
+  if (sent.error) return { error: sent.error };
+  return { ok: sent.ok, step: "code", email };
+}
+
+export async function confirmSignupAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const email = clean(formData.get("email"), 180).toLowerCase();
+  const code = clean(formData.get("code"), 12);
+  await ensureAuthSchema();
+  const result = await consumeCode(email, "signup", code);
+  if (result.error || result.payload == null) return { error: result.error || "Code incorrect.", step: "code", email };
+  const pending = JSON.parse(result.payload) as { name: string; phone: string; passwordHash: string };
   const [existing] = await db.select().from(users).where(eq(users.email, email));
   if (existing) return { error: "Un compte existe déjà avec cet e-mail." };
   const id = uid("usr");
+  const role = roleForEmail(email);
   await db.insert(users).values({
     id,
-    name,
+    name: pending.name,
     email,
-    phone: phone || null,
-    role: "client",
-    passwordHash: await bcrypt.hash(password, 10),
+    phone: pending.phone || null,
+    role,
+    emailVerified: true,
+    authProvider: "password",
+    passwordHash: pending.passwordHash,
   });
-  await setSession({ id, email, name, role: "client" });
-  redirect("/compte");
+  await setSession({ id, email, name: pending.name, role });
+  redirect(homeFor(role));
+}
+
+export async function requestPasswordCodeAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const email = clean(formData.get("email"), 180).toLowerCase();
+  if (!email) return { error: "Indiquez votre e-mail." };
+  if (!ionosReady()) {
+    return { error: "Le code partira depuis contact@zaion-upcycling.com dès que la boîte sera reliée au serveur." };
+  }
+  await ensureAuthSchema();
+  const [user] = await db.select().from(users).where(eq(users.email, email));
+  if (user) {
+    const sent = await issueCode({ email, purpose: "reset" });
+    if (sent.error) return { error: sent.error };
+  }
+  return { ok: "Si un compte correspond à cet e-mail, le code vient d'être envoyé.", step: "code", email };
+}
+
+export async function confirmPasswordCodeAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const email = clean(formData.get("email"), 180).toLowerCase();
+  const code = clean(formData.get("code"), 12);
+  const password = String(formData.get("password") ?? "");
+  if (password.length < 8) return { error: "Le mot de passe doit faire 8 caractères.", step: "code", email };
+  await ensureAuthSchema();
+  const result = await consumeCode(email, "reset", code);
+  if (result.error) return { error: result.error, step: "code", email };
+  const [user] = await db.select().from(users).where(eq(users.email, email));
+  if (!user) return { error: "Aucun compte ne correspond à cet e-mail." };
+  await db.update(users).set({ passwordHash: await bcrypt.hash(password, 10), emailVerified: true, authProvider: "password" }).where(eq(users.id, user.id));
+  return openSession(user, "");
 }
 
 export async function changePasswordAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
@@ -155,12 +225,64 @@ export async function changePasswordAction(_prev: ActionState, formData: FormDat
   const current = String(formData.get("current") ?? "");
   const next = String(formData.get("next") ?? "");
   if (next.length < 8) return { error: "Le nouveau mot de passe doit faire 8 caractères." };
+  await ensureAuthSchema();
   const [user] = await db.select().from(users).where(eq(users.id, session.id));
   if (!user || !(await bcrypt.compare(current, user.passwordHash))) {
     return { error: "Mot de passe actuel incorrect." };
   }
-  await db.update(users).set({ passwordHash: await bcrypt.hash(next, 10) }).where(eq(users.id, user.id));
+  const sent = await issueCode({
+    email: user.email,
+    purpose: "password",
+    payload: JSON.stringify({ passwordHash: await bcrypt.hash(next, 10) }),
+  });
+  if (sent.error) return { error: sent.error };
+  return { ok: sent.ok, step: "code", email: user.email };
+}
+
+export async function confirmChangedPasswordAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const session = await getSession();
+  if (!session) redirect("/connexion");
+  const code = clean(formData.get("code"), 12);
+  await ensureAuthSchema();
+  const result = await consumeCode(session.email, "password", code);
+  if (result.error || !result.payload) return { error: result.error || "Code incorrect.", step: "code", email: session.email };
+  const pending = JSON.parse(result.payload) as { passwordHash: string };
+  await db.update(users).set({ passwordHash: pending.passwordHash }).where(eq(users.id, session.id));
   return { ok: "Mot de passe mis à jour." };
+}
+
+export async function updateProfileAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const session = await getSession();
+  if (!session) redirect("/connexion");
+  const name = clean(formData.get("name"), 120);
+  const phone = clean(formData.get("phone"), 40);
+  const address = clean(formData.get("address"), 400);
+  if (!name) return { error: "Le nom est requis." };
+  await ensureAuthSchema();
+  const sent = await issueCode({
+    email: session.email,
+    purpose: "profile",
+    payload: JSON.stringify({ name, phone, address }),
+  });
+  if (sent.error) return { error: sent.error };
+  return { ok: sent.ok, step: "code", email: session.email };
+}
+
+export async function confirmProfileAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const session = await getSession();
+  if (!session) redirect("/connexion");
+  const code = clean(formData.get("code"), 12);
+  await ensureAuthSchema();
+  const result = await consumeCode(session.email, "profile", code);
+  if (result.error || !result.payload) return { error: result.error || "Code incorrect.", step: "code", email: session.email };
+  const pending = JSON.parse(result.payload) as { name: string; phone: string; address: string };
+  await db.update(users).set({
+    name: pending.name,
+    phone: pending.phone || null,
+    address: pending.address || null,
+  }).where(eq(users.id, session.id));
+  await setSession({ ...session, name: pending.name });
+  return { ok: "Coordonnées mises à jour." };
 }
 
 export async function priceCart(items: { slug: string; qty: number }[]) {
@@ -181,6 +303,31 @@ export async function priceCart(items: { slug: string; qty: number }[]) {
       };
     })
     .filter((line): line is NonNullable<typeof line> => Boolean(line));
+}
+
+async function readOffer(rawCode: string, grossCents: number, vatRate: number) {
+  const code = rawCode.trim().toUpperCase().replace(/\s+/g, "");
+  if (!code) {
+    return { code: null, promoId: null, discountCents: 0, totalCents: grossCents, referralCreditCents: 0, referrerName: null };
+  }
+  await ensureCatalog();
+  const [promo] = await db.select().from(promos).where(eq(promos.code, code));
+  if (!promo || !promo.active) return { error: "Ce code n'est pas valable." };
+  if (promo.maxUses != null && promo.uses >= promo.maxUses) return { error: "Ce code a atteint son nombre d'utilisations." };
+  const discountCents = promo.kind === "amount"
+    ? Math.min(promo.value, grossCents)
+    : Math.min(grossCents, Math.round((grossCents * promo.value) / 100));
+  const totalCents = grossCents - discountCents;
+  const { htCents } = splitTtc(totalCents, vatRate);
+  const referralCreditCents = promo.kind === "referral" ? Math.round((htCents * (promo.referrerRate ?? 0)) / 100) : 0;
+  return {
+    code: promo.code,
+    promoId: promo.id,
+    discountCents,
+    totalCents,
+    referralCreditCents,
+    referrerName: promo.referrerName,
+  };
 }
 
 export async function placeOrder(_prev: ActionState, formData: FormData): Promise<ActionState> {
@@ -206,29 +353,25 @@ export async function placeOrder(_prev: ActionState, formData: FormData): Promis
     if (password.length < 8) return { error: "Choisissez un mot de passe de 8 caractères pour suivre la commande." };
     const [existing] = await db.select().from(users).where(eq(users.email, email));
     if (existing) {
+      if (!existing.emailVerified) {
+        return { error: "Confirmez d'abord l'adresse avec le code reçu par e-mail." };
+      }
       if (!(await bcrypt.compare(password, existing.passwordHash))) {
         return { error: "Cet e-mail a déjà un compte. Le mot de passe ne correspond pas." };
       }
-      session = { id: existing.id, email: existing.email, name: existing.name, role: existing.role as Role };
+      const role = (roleForEmail(existing.email) === "client" ? existing.role : roleForEmail(existing.email)) as Role;
+      session = { id: existing.id, email: existing.email, name: existing.name, role };
     } else {
-      const id = uid("usr");
-      await db.insert(users).values({
-        id,
-        name,
-        email,
-        phone: phone || null,
-        address,
-        role: "client",
-        passwordHash: await bcrypt.hash(password, 10),
-      });
-      session = { id, email, name, role: "client" };
+      return { error: "Créez le compte et confirmez le code reçu par e-mail, puis revenez à la commande." };
     }
     await setSession(session);
   }
 
   const prefs = await readSettings();
-  const totalCents = lines.reduce((sum, line) => sum + line.lineCents, 0);
-  const { htCents, vatCents } = splitTtc(totalCents, prefs.vatRate);
+  const grossCents = lines.reduce((sum, line) => sum + line.lineCents, 0);
+  const offer = await readOffer(clean(formData.get("code"), 40), grossCents, prefs.vatRate);
+  if ("error" in offer) return offer;
+  const { htCents, vatCents } = splitTtc(offer.totalCents, prefs.vatRate);
   const commissionCents = Math.round((htCents * prefs.commissionRate) / 100);
   const [{ value }] = await db.select({ value: count() }).from(orders);
   const id = uid("ord");
@@ -244,11 +387,19 @@ export async function placeOrder(_prev: ActionState, formData: FormData): Promis
     status: "recue",
     subtotalCents: htCents,
     vatCents,
-    totalCents,
+    totalCents: offer.totalCents,
     commissionCents,
     commissionRate: prefs.commissionRate,
     note: note || null,
+    promoCode: offer.code,
+    discountCents: offer.discountCents,
+    referralCreditCents: offer.referralCreditCents,
+    referrerName: offer.referrerName,
   });
+  if (offer.promoId) {
+    const [promo] = await db.select().from(promos).where(eq(promos.id, offer.promoId));
+    if (promo) await db.update(promos).set({ uses: promo.uses + 1 }).where(eq(promos.id, promo.id));
+  }
   await db.insert(orderItems).values(
     lines.map((line) => ({
       id: uid("itm"),
@@ -279,6 +430,20 @@ export async function placeOrder(_prev: ActionState, formData: FormData): Promis
   });
   revalidatePath("/atelier");
   revalidatePath("/pilotage");
+  if (clean(formData.get("pay"), 20) === "card") {
+    if (!zaionStripeReady()) {
+      redirect(`/compte/commandes/${id}?neuf=1&carte=attente`);
+    }
+    const headerList = await headers();
+    const host = headerList.get("x-forwarded-host") || headerList.get("host") || "zaion-upcycling.com";
+    const proto = headerList.get("x-forwarded-proto") || "https";
+    const checkout = await createZaionCheckout({
+      order: { id, number, customerEmail: email, totalCents: offer.totalCents },
+      origin: `${proto}://${host}`,
+    });
+    if (checkout.url) redirect(checkout.url);
+    redirect(`/compte/commandes/${id}?neuf=1&carte=echec`);
+  }
   redirect(`/compte/commandes/${id}?neuf=1`);
 }
 
@@ -533,6 +698,23 @@ export async function deleteCharge(formData: FormData) {
   revalidatePath("/pilotage");
 }
 
+export async function recordManualPayment(formData: FormData) {
+  await staff();
+  await ensureCatalog();
+  const id = clean(formData.get("id"), 40);
+  const detail = clean(formData.get("detail"), 80);
+  const [order] = await db.select().from(orders).where(eq(orders.id, id));
+  if (!order || order.status === "annulee") return;
+  if (order.paymentRef && !order.paymentRef.startsWith("manuel")) return;
+  await db.update(orders).set({
+    paymentRef: detail ? `manuel:${detail}` : "manuel",
+    status: order.status === "recue" ? "confirmee" : order.status,
+  }).where(eq(orders.id, id));
+  revalidatePath("/atelier/commandes");
+  revalidatePath("/pilotage");
+  revalidatePath(`/compte/commandes/${id}`);
+}
+
 export async function updateOrderStatus(formData: FormData) {
   await staff();
   const id = clean(formData.get("id"), 40);
@@ -547,21 +729,125 @@ export async function updateOrderStatus(formData: FormData) {
   revalidatePath(`/compte/commandes/${id}`);
 }
 
-export async function updateProduct(formData: FormData) {
-  await staff();
-  const id = clean(formData.get("id"), 40);
+const productUnits = new Set(["pièce", "m²", "m³", "ml", "heure"]);
+
+function slugify(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 72);
+}
+
+async function storePhoto(file: FormDataEntryValue | null): Promise<null | { error: string } | { url: string }> {
+  if (!(file instanceof File) || file.size === 0) return null;
+  if (file.size > 2_000_000) return { error: "La photo dépasse 2 Mo." };
+  if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+    return { error: "La photo doit être un JPEG, un PNG ou un WebP." };
+  }
+  const id = uid("img");
+  const bytes = Buffer.from(await file.arrayBuffer());
+  await db.insert(media).values({ id, mime: file.type, data: bytes.toString("base64") });
+  return { url: `/media/${id}` };
+}
+
+async function readProductFields(formData: FormData) {
+  await ensureCatalog();
+  const prefs = await readSettings();
+  const name = clean(formData.get("name"), 160);
+  const summary = clean(formData.get("summary"), 280);
+  const description = clean(formData.get("description"), 8000);
+  const category = clean(formData.get("category"), 40);
+  const unit = clean(formData.get("unit"), 20);
+  const universes = new Set(["nautisme", "mobilier", "evenementiel", "mode", "transmission", "atelier"]);
+  const basis = clean(formData.get("basis"), 8) === "ht" ? "ht" : "ttc";
   const raw = clean(formData.get("price"), 20).replace(",", ".");
-  const priceCents = raw === "" ? null : Math.round(Number(raw) * 100);
-  await db
-    .update(products)
-    .set({
-      priceCents: priceCents != null && Number.isFinite(priceCents) ? priceCents : null,
-      purchasable: formData.get("purchasable") === "on" && priceCents != null,
-      active: formData.get("active") === "on",
-    })
-    .where(eq(products.id, id));
+  const amount = raw === "" ? null : Math.round(Number(raw) * 100);
+  const cardSummary = summary || description.replace(/\s+/g, " ").slice(0, 180);
+  if (!name || !description) return { error: "Le titre et la description sont requis." };
+  if (!universes.has(category)) return { error: "Choisissez un univers." };
+  if (!productUnits.has(unit)) return { error: "Choisissez une unité." };
+  if (amount != null && (!Number.isFinite(amount) || amount < 0)) return { error: "Le prix n'est pas lisible." };
+  const vat = prefs.vatRate;
+  const priceCents = amount == null ? null : basis === "ht" ? Math.round((amount * (100 + vat)) / 100) : amount;
+  const priceHtCents = amount == null ? null : basis === "ht" ? amount : Math.round((amount * 100) / (100 + vat));
+  const photo = await storePhoto(formData.get("photo"));
+  if (photo && "error" in photo) return photo;
+  return {
+    name,
+    summary: cardSummary,
+    description,
+    category,
+    unit,
+    priceBasis: basis,
+    priceCents,
+    priceHtCents,
+    image: photo && "url" in photo ? photo.url : "",
+    purchasable: formData.get("purchasable") === "on" && priceCents != null,
+    active: formData.get("active") === "on",
+  };
+}
+
+export async function createProduct(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  await staff();
+  const fields = await readProductFields(formData);
+  if ("error" in fields) return fields;
+  if (!fields.image) return { error: "Ajoutez une photo." };
+  let slug = slugify(fields.name) || uid("piece");
+  const [taken] = await db.select({ id: products.id }).from(products).where(eq(products.slug, slug));
+  if (taken) slug = `${slug}-${uid("p").slice(-4)}`;
+  const id = uid("prd");
+  await db.insert(products).values({ id, slug, compareAtCents: null, ...fields });
   revalidatePath("/boutique");
   revalidatePath("/atelier/produits");
+  redirect(`/atelier/produits/${id}`);
+}
+
+export async function updateProduct(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  await staff();
+  const id = clean(formData.get("id"), 40);
+  const [current] = await db.select().from(products).where(eq(products.id, id));
+  if (!current) return { error: "Pièce introuvable." };
+  const fields = await readProductFields(formData);
+  if ("error" in fields) return fields;
+  await db
+    .update(products)
+    .set({ ...fields, image: fields.image || current.image })
+    .where(eq(products.id, id));
+  revalidatePath("/boutique");
+  revalidatePath(`/produit/${current.slug}`);
+  revalidatePath("/atelier/produits");
+  revalidatePath(`/atelier/produits/${id}`);
+  return { ok: "Pièce enregistrée." };
+}
+
+export async function saveOrderNote(formData: FormData) {
+  await staff();
+  await ensureCatalog();
+  const id = clean(formData.get("id"), 40);
+  await db.update(orders).set({ atelierNote: clean(formData.get("atelierNote"), 1200) || null }).where(eq(orders.id, id));
+  revalidatePath("/atelier/commandes");
+}
+
+export async function startCardPayment(formData: FormData) {
+  const session = await getSession();
+  if (!session) redirect("/connexion");
+  await ensureCatalog();
+  const id = clean(formData.get("id"), 40);
+  const [order] = await db.select().from(orders).where(eq(orders.id, id));
+  if (!order || (order.userId !== session.id && session.role === "client")) redirect("/compte");
+  if (order.paymentRef || order.status === "annulee") redirect(`/compte/commandes/${id}`);
+  const headerList = await headers();
+  const host = headerList.get("x-forwarded-host") || headerList.get("host") || "zaion-upcycling.com";
+  const proto = headerList.get("x-forwarded-proto") || "https";
+  const checkout = await createZaionCheckout({
+    order: { id: order.id, number: order.number, customerEmail: order.customerEmail, totalCents: order.totalCents },
+    origin: `${proto}://${host}`,
+  });
+  if (!checkout.url) redirect(`/compte/commandes/${id}?carte=echec`);
+  redirect(checkout.url);
 }
 
 export async function saveAtelierPresence(_prev: ActionState, formData: FormData): Promise<ActionState> {
@@ -608,4 +894,85 @@ export async function saveCommission(_prev: ActionState, formData: FormData): Pr
   revalidatePath("/pilotage");
   revalidatePath("/atelier");
   return { ok: "Réglages enregistrés. Les prochaines commandes utilisent ce taux." };
+}
+
+export async function deleteProduct(formData: FormData) {
+  await staff();
+  await ensureCatalog();
+  const id = clean(formData.get("id"), 40);
+  const [current] = await db.select().from(products).where(eq(products.id, id));
+  if (!current) redirect("/atelier/produits");
+  await db.delete(products).where(eq(products.id, id));
+  revalidatePath("/boutique");
+  revalidatePath(`/produit/${current.slug}`);
+  revalidatePath("/atelier/produits");
+  redirect("/atelier/produits");
+}
+
+export async function savePromo(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  await staff();
+  await ensureCatalog();
+  const code = clean(formData.get("code"), 24).toUpperCase().replace(/\s+/g, "");
+  const label = clean(formData.get("label"), 120);
+  const kind = clean(formData.get("kind"), 20);
+  const raw = Number(clean(formData.get("value"), 12).replace(",", "."));
+  if (!/^[A-Z0-9-]{3,24}$/.test(code)) return { error: "Le code fait 3 à 24 lettres ou chiffres." };
+  if (!label) return { error: "Donnez un nom à l'offre." };
+  if (!["percent", "amount", "referral"].includes(kind)) return { error: "Choisissez le type d'offre." };
+  if (!Number.isFinite(raw) || raw <= 0) return { error: "Indiquez la valeur de la remise." };
+  const value = kind === "amount" ? Math.round(raw * 100) : Math.round(raw);
+  if (kind !== "amount" && (value < 1 || value > 80)) return { error: "Le pourcentage va de 1 à 80." };
+  if (kind === "amount" && value > 100_000_00) return { error: "Le montant est trop élevé." };
+  const referrerName = clean(formData.get("referrerName"), 120) || null;
+  const referrerEmail = clean(formData.get("referrerEmail"), 180).toLowerCase() || null;
+  const referrerRate = Math.round(Number(clean(formData.get("referrerRate"), 6).replace(",", ".")) || 0);
+  if (kind === "referral" && !referrerName) return { error: "Indiquez le nom du parrain." };
+  if (kind === "referral" && (referrerRate < 0 || referrerRate > 30)) return { error: "La part du parrain va de 0 à 30 % du HT." };
+  const maxRaw = clean(formData.get("maxUses"), 6);
+  const maxUses = maxRaw ? Math.round(Number(maxRaw)) : null;
+  if (maxUses != null && (!Number.isFinite(maxUses) || maxUses < 1)) return { error: "Le nombre d'utilisations n'est pas lisible." };
+  const [taken] = await db.select({ id: promos.id }).from(promos).where(eq(promos.code, code));
+  if (taken) return { error: "Ce code existe déjà." };
+  await db.insert(promos).values({
+    id: uid("pro"),
+    code,
+    label,
+    kind,
+    value,
+    referrerName: kind === "referral" ? referrerName : null,
+    referrerEmail: kind === "referral" ? referrerEmail : null,
+    referrerRate: kind === "referral" ? referrerRate : null,
+    active: true,
+    maxUses,
+    uses: 0,
+  });
+  revalidatePath("/atelier/offres");
+  return { ok: "Offre enregistrée." };
+}
+
+export async function setPromoActive(formData: FormData) {
+  await staff();
+  await ensureCatalog();
+  const id = clean(formData.get("id"), 40);
+  await db.update(promos).set({ active: formData.get("active") === "1" }).where(eq(promos.id, id));
+  revalidatePath("/atelier/offres");
+}
+
+export async function deletePromo(formData: FormData) {
+  await staff();
+  await ensureCatalog();
+  const id = clean(formData.get("id"), 40);
+  await db.delete(promos).where(eq(promos.id, id));
+  revalidatePath("/atelier/offres");
+}
+
+export async function saveSiteCopyAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  await staff();
+  await setSetting("site_copy", JSON.stringify(copyFromForm(formData)));
+  revalidatePath("/");
+  revalidatePath("/a-propos");
+  revalidatePath("/contact");
+  for (const item of categories) revalidatePath(`/univers/${item.slug}`);
+  revalidatePath("/atelier/site");
+  return { ok: "Textes enregistrés. Ils sont en ligne sur le site." };
 }

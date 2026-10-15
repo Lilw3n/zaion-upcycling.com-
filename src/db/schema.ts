@@ -10,6 +10,7 @@ export const users = pgTable("users", {
   address: text("address"),
   googleSub: text("google_sub"),
   authProvider: text("auth_provider").default("password"),
+  emailVerified: boolean("email_verified").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
@@ -18,6 +19,8 @@ export const authTokens = pgTable("auth_tokens", {
   email: text("email").notNull(),
   tokenHash: text("token_hash").notNull(),
   purpose: text("purpose").notNull(),
+  payload: text("payload"),
+  attempts: integer("attempts").notNull().default(0),
   expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
   used: boolean("used").notNull().default(false),
 });
@@ -35,6 +38,9 @@ export const products = pgTable("products", {
   summary: text("summary").notNull(),
   description: text("description").notNull(),
   priceCents: integer("price_cents"),
+  priceHtCents: integer("price_ht_cents"),
+  priceBasis: text("price_basis").notNull().default("ttc"),
+  unit: text("unit"),
   compareAtCents: integer("compare_at_cents"),
   image: text("image").notNull(),
   purchasable: boolean("purchasable").notNull().default(true),
@@ -56,7 +62,34 @@ export const orders = pgTable("orders", {
   commissionCents: integer("commission_cents").notNull(),
   commissionRate: integer("commission_rate").notNull(),
   note: text("note"),
+  atelierNote: text("atelier_note"),
+  paymentRef: text("payment_ref"),
+  promoCode: text("promo_code"),
+  discountCents: integer("discount_cents").notNull().default(0),
+  referralCreditCents: integer("referral_credit_cents").notNull().default(0),
+  referrerName: text("referrer_name"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const promos = pgTable("promos", {
+  id: text("id").primaryKey(),
+  code: text("code").notNull().unique(),
+  label: text("label").notNull(),
+  kind: text("kind").notNull(),
+  value: integer("value").notNull(),
+  referrerName: text("referrer_name"),
+  referrerEmail: text("referrer_email"),
+  referrerRate: integer("referrer_rate"),
+  active: boolean("active").notNull().default(true),
+  maxUses: integer("max_uses"),
+  uses: integer("uses").notNull().default(0),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const media = pgTable("media", {
+  id: text("id").primaryKey(),
+  mime: text("mime").notNull(),
+  data: text("data").notNull(),
 });
 
 export const orderItems = pgTable("order_items", {
