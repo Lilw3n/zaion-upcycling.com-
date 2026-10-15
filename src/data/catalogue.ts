@@ -1,0 +1,284 @@
+export type Category =
+  | "nautisme"
+  | "mobilier"
+  | "evenementiel"
+  | "mode"
+  | "transmission"
+  | "atelier";
+
+export type CatalogueItem = {
+  slug: string;
+  name: string;
+  category: Category;
+  priceCents: number | null;
+  compareAtCents: number | null;
+  image: string;
+  summary: string;
+  description: string;
+  purchasable: boolean;
+};
+
+export const categories: { slug: Category; label: string; blurb: string; image: string }[] = [
+  {
+    slug: "nautisme",
+    label: "Nautisme",
+    blurb: "Réparation et fabrication de voiles, wings, housses et aménagements.",
+    image: "/realisations/wing.jpeg",
+  },
+  {
+    slug: "mobilier",
+    label: "Mobilier",
+    blurb: "Banquettes, assises, rideaux et habillages sur mesure.",
+    image: "/catalogue/banquette.jpg",
+  },
+  {
+    slug: "evenementiel",
+    label: "Événementiel",
+    blurb: "Structures gonflables, volumes textiles et scénographies.",
+    image: "/realisations/abris.jpg",
+  },
+  {
+    slug: "mode",
+    label: "Mode",
+    blurb: "Créations, retouches et accessoires à partir de matières existantes.",
+    image: "/catalogue/chapeau-bob.jpg",
+  },
+  {
+    slug: "transmission",
+    label: "Transmission",
+    blurb: "Cours et ateliers pour réparer, transformer et faire durer.",
+    image: "/realisations/soudeuse.jpg",
+  },
+];
+
+export const catalogue: CatalogueItem[] = [
+  {
+    slug: "chenille-gonflable-architecture-scenographique",
+    name: "Chenille Gonflable & Architecture Scénographique",
+    category: "evenementiel",
+    priceCents: 18500,
+    compareAtCents: null,
+    image: "/catalogue/chenille-gonflable-architecture-scenographique.jpg",
+    summary: "Transformez l’espace public et offrez à vos visiteurs une expérience visuelle captivante.",
+    description: "Transformez l’espace public et offrez à vos visiteurs une expérience visuelle captivante. Notre structure gonflable monumentale en forme de chenille est une œuvre d’art textile conçue sur-mesure pour les musées, les festivals culturels et les projets artistiques urbains. Conçue pour l’extérieur comme pour l’intérieur, elle sert à la fois de sculpture volumétrique et d’ écran de rétroprojection immersif pour le mapping vidéo nocturne.\n\nUne œuvre d’art clé en main : disponible à la conception sur-mesure ou en projet de co-création.\n\n🏷️ Tarification au volume sur-mesure (au m³)\n\nNotre tarif pour la conception de structures artistiques gonflables monumentales est unique et transparent : 185,00 € TTC le mètre cube (m³) . Ce prix comprend l’étude de patronnage tridimensionnel, la fourniture du plastique technique à haute diffusion lumineuse et l’assemblage intégral par thermosoudure dans notre atelier.\n\nPour budgétiser ou commander votre structure, il vous suffit de calculer le volume total souhaité pour votre œuvre et d’ajuster la quantité lors de votre ajout au panier (arrondie au mètre cube supérieur).\n\nExemple de référence (Modèle en photo) : Une chenille géante de 10 m de long et 2 m de diamètre représente un volume total de 31 m³ . Sélectionnez une Quantité de 31 lors de l’achat. (Prix arrondi : 5 735,00 €)\n\nExemple 2 : Un module immersif plus compact de 5 m de long et 2 m de diamètre représente un volume de 16 m³ . Sélectionnez une Quantité de 16 lors de l’achat. (Prix : 2 960,00 €)\n\nUne fois la pré-commande validée, notre bureau d’études prend contact avec vos services culturels ou vos scénographes sous 24h pour modéliser la forme en 3D, valider le volume exact et planifier le calendrier de fabrication.",
+    purchasable: true,
+  },
+  {
+    slug: "enclosure-fermeture-de-flybridge-sur-mesure-protection-integrale",
+    name: "Enclosure & Fermeture de Flybridge Sur-Mesure – Protection Intégrale",
+    category: "nautisme",
+    priceCents: 34000,
+    compareAtCents: null,
+    image: "/catalogue/enclosure-fermeture-de-flybridge-sur-mesure-protection-integrale.webp",
+    summary: "Créez un véritable espace de vie supplémentaire à bord, totalement protégé des éléments !",
+    description: "Créez un véritable espace de vie supplémentaire à bord, totalement protégé des éléments ! Notre Enclosure (fermeture arrière et latérale) sur-mesure protège le cockpit ou le flybridge de votre catamaran du vent, des embruns et de la pluie. Confectionnée à partir de toiles marines upcyclées et de vitrages cristal de haute clarté, elle vous permet de naviguer ou de rester au mouillage bien au sec, sans perdre une once de visibilité.\n\nVotre protection à 360° : commandez directement votre surface de vitrage au m² !\n\n🏷️ Comment commander vos dimensions sur-mesure ?\n\nNotre tarification pour la gamme enclosure est transparente : 340,00 € TTC le m² , tout inclus (toile technique upcyclée, fenêtres en cristal transparent haute clarté, zips marins renforcés, fixations et finitions).\n\nPour commander, calculez la surface totale développée des panneaux souples à fabriquer (Largeur x Hauteur pour chaque face à fermer) et ajustez la quantité au panier pour qu’elle corresponde au nombre total de mètres carrés nécessaires (arrondie au m² supérieur).\n\nExemple 1 : Vous souhaitez fermer un côté de poste de pilotage nécessitant 4 m² de panneaux. Sélectionnez une Quantité de 4 lors de l’achat. (Prix : 1 360 €)\n\nExemple 2 : Vous réalisez le tour complet du flybridge (façades et côtés) représentant 12 m² de surface de protection. Sélectionnez une Quantité de 12 lors de l’achat. (Prix : 4 080 €)\n\nDès la validation de votre commande, notre équipe prend contact avec vous sous 24h pour étudier les plans de votre bimini existant, l’emplacement de vos arceaux et récupérer les mesures ou gabarits précis afin de lancer la fabrication artisanale.",
+    purchasable: true,
+  },
+  {
+    slug: "bureau-detudes-prototypage",
+    name: "Bureau d’Études & Prototypage",
+    category: "atelier",
+    priceCents: null,
+    compareAtCents: null,
+    image: "/catalogue/bureau-detudes-prototypage.png",
+    summary: "Allégez vos structures, simplifiez la logistique et repensez les volumes !",
+    description: "Allégez vos structures, simplifiez la logistique et repensez les volumes ! Zaïon Upcycling accompagne les universités, les cabinets d’architecture et les industriels dans la recherche de solutions innovantes. De l’étude de faisabilité à la conception d’arches et de sections gonflables haute pression, nous transformons les textiles techniques en structures porteuses, légères et durables.\n\n🏷️ Forfait Étude de Faisabilité & Prise de Contact\n\nChaque projet technique étant unique, nous proposons un premier niveau de collaboration pour analyser vos cahiers des charges :\n\nForfait Analyse de Cahier des Charges & Faisabilité : 450,00 € TTC (Comprend l’étude technique préliminaire de vos plans, l’évaluation des pressions/matériaux et 1h de visioconférence de restitution).\n\nProjets Complexes & Confection de Prototypes : Sur devis uniquement.\n\n📱 Contact direct Bureau d’Études : Appelez notre shaper au 06 14 92 25 65 ou écrivez-nous à contact@zaion-upcycling.com pour nous présenter vos contraintes de poids, de charge et de dimensions.",
+    purchasable: false,
+  },
+  {
+    slug: "housse-de-protection-dannexe",
+    name: "Housse de Protection d’Annexe",
+    category: "nautisme",
+    priceCents: 19000,
+    compareAtCents: null,
+    image: "/catalogue/housse-de-protection-dannexe.jpeg",
+    summary: "Protégez les boudins de votre annexe gonflable ou semi-rigide contre le vieillissement prématuré avec notre housse intégrale (chaussette de protection) sur-mesure en textile techni",
+    description: "Protégez les boudins de votre annexe gonflable ou semi-rigide contre le vieillissement prématuré avec notre housse intégrale (chaussette de protection) sur-mesure en textile technique upcyclé . Conçue à partir de toiles acryliques marines lourdes, elle forme un bouclier impénétrable contre les rayons UV (principale cause de porosité du PVC/Hypalon), la lune, les frottements à quai et le sel.\n\nPréservez votre investissement : commandez simplement votre surface au m² !\n\n🏷️ Comment commander vos dimensions sur-mesure ?\n\nNotre système de tarification reste transparent et unique pour la gamme protection : 190,00 € TTC le m² , finitions ajustées, passages pour poignées, œillets ou cordons de serrage périmétriques inclus.\n\nPour passer commande, estimez la surface de toile développée nécessaire pour envelopper vos boudins et ajustez la quantité lors de votre ajout au panier (arrondie au mètre carré supérieur).\n\nExemple 1 : Pour une petite annexe de yacht nécessitant 3 m² de tissu de protection. Sélectionnez une Quantité de 3 lors de l’achat. (Prix : 570 €)\n\nExemple 2 : Pour une grande annexe de catamaran ou un modèle semi-rigide développé nécessitant 6 m² de toile. Sélectionnez une Quantité de 6 lors de l’achat. (Prix : 1 140 €)\n\nUne fois la commande enregistrée, notre atelier prend contact avec vous sous 24h pour récupérer le modèle exact de votre embarcation (ex: 3D Tender, Highfield, Zodiac), ses dimensions ou vos gabarits afin de lancer une découpe parfaitement ajustée.",
+    purchasable: true,
+  },
+  {
+    slug: "cours-particuliers-ateliers-creatifs",
+    name: "Cours Particuliers & Ateliers Créatifs",
+    category: "transmission",
+    priceCents: 1600,
+    compareAtCents: null,
+    image: "/catalogue/cours-particuliers-ateliers-creatifs.jpeg",
+    summary: "Apprenez à dompter la matière et donnez vie à vos projets les plus fous !",
+    description: "Apprenez à dompter la matière et donnez vie à vos projets les plus fous ! Zaïon Upcycling vous ouvre les portes de son atelier pour des cours sur-mesure de couture technique, soudure plastique et conception de structures gonflables . Que vous souhaitiez réparer votre propre matériel de glisse (kitesurf, wingfoil) ou créer une œuvre plastique monumentale, apprenez les gestes des professionnels.\n\n💡 Comment réserver vos heures de formation en ligne ?\n\nPour planifier votre session, il vous suffit d’ajuster la quantité dans votre panier pour qu’elle corresponde au nombre d’heures que vous souhaitez réserver.\n\nExemple 1 : Vous voulez une initiation rapide ou un coup de main sur une réparation technique de 3 heures . Sélectionnez une Quantité de 3 lors de l’achat. (Prix : 48 €)\n\nExemple 2 : Vous lancez un projet complexe (gabarit, patronnage, découpe, assemblage d’un projet gonflable complet) nécessitant 10 heures d’accompagnement. Sélectionnez une Quantité de 10 lors de l’achat. (Prix : 160 €)\n\nUne fois vos heures réservées, l’atelier vous contacte sous 24h par téléphone ou par e-mail à contact@zaion-upcycling.com pour définir votre programme personnalisé et fixer vos créneaux horaires sur notre calendrier.",
+    purchasable: true,
+  },
+  {
+    slug: "bache-piscine",
+    name: "Bâche Piscine",
+    category: "nautisme",
+    priceCents: 1400,
+    compareAtCents: null,
+    image: "/catalogue/bache-piscine.jpeg",
+    summary: "Optimisez la température de votre bassin et protégez-le des impuretés avec notre bâche à bulles isothermique haut de gamme, confectionnée sur-mesure .",
+    description: "Optimisez la température de votre bassin et protégez-le des impuretés avec notre bâche à bulles isothermique haut de gamme, confectionnée sur-mesure . Grâce à son épaisseur renforcée de 400 ou 500 microns et son traitement anti-UV, elle chauffe naturellement l’eau en journée grâce à l’énergie solaire et freine l’évaporation ainsi que la déperdition thermique durant la nuit.\n\nVotre bâche au millimètre : commandez directement votre surface totale au m² !\n\n🏷️ Comment commander vos dimensions sur-mesure ?\n\nNotre système de tarification à l’atelier est simple et transparent : 14,00 € TTC le m² , finitions bordées et œillets de fixation pour enrouleur compris.\n\nPour passer commande, calculez la surface de votre bassin (Longueur x Largeur) et ajustez la quantité lors de votre ajout au panier pour qu’elle corresponde au nombre total de mètres carrés nécessaires (arrondié au mètre carré supérieur).\n\nExemple 1 : Votre piscine mesure 6 m x 3 m, soit une surface de 18 m² . Sélectionnez une Quantité de 18 lors de l’achat. (Prix : 252 €)\n\nExemple 2 : Vous possédez un grand bassin de 10 m x 5 m, soit une surface de 50 m² . Sélectionnez une Quantité de 50 lors de l’achat. (Prix : 700 €)\n\nDès la validation de votre commande, notre atelier prend contact avec vous sous 24h pour obtenir les formes exactes de votre bassin (marches, angles vifs ou arrondis, découpe bloc technique) afin de lancer la découpe sur-mesure.",
+    purchasable: true,
+  },
+  {
+    slug: "rideau-de-cabine-hublot-sur-mesure",
+    name: "Rideau de Cabine & Hublot Sur-Mesure",
+    category: "nautisme",
+    priceCents: 8500,
+    compareAtCents: null,
+    image: "/catalogue/rideau-de-cabine-hublot-sur-mesure.jpeg",
+    summary: "Préservez votre intimité à quai et profitez d’un sommeil réparateur à bord avec nos rideaux de cabine occultants sur-mesure en textile upcyclé .",
+    description: "Préservez votre intimité à quai et profitez d’un sommeil réparateur à bord avec nos rideaux de cabine occultants sur-mesure en textile upcyclé . Confectionnés artisanalement à partir de chutes de tissus d’ameublement haut de gamme et de voilages marins revalorisés, ils s’adaptent au millimètre près à la forme de vos hublots de coque et panneaux de pont.\n\nL’aménagement intérieur sur-mesure : commandez simplement au nombre de hublots !\n\n🏷️ Comment commander vos rideaux sur-mesure ?\n\nNotre tarif pour la gamme rideau intérieur est fixe et transparent : 85,00 € TTC par hublot / panneau , incluant la toile technique upcyclée, les systèmes de fixation (bandes auto-agrippantes, boutons-pression marins ou passants pour tringles) et l’embrasse de maintien assortie.\n\nPour passer commande, il vous suffit de sélectionner la quantité correspondant au nombre total de vitrages que vous souhaitez équiper.\n\nExemple 1 : Vous souhaitez équiper les 2 hublots de votre cabine arrière. Sélectionnez une Quantité de 2 au moment de l’achat. (Prix : 170 €)\n\nExemple 2 : Vous refaites l’intégralité du carré et des cabines, soit 6 ouvertures . Sélectionnez une Quantité de 6 au moment de l’achat. (Prix : 510 €)\n\nDès la validation de votre commande, notre équipe prend contact avec vous sous 24h par e-mail ou téléphone pour recueillir les formes (rectangulaires, trapézoïdales) et dimensions exactes de vos hublots afin de lancer la confection.",
+    purchasable: true,
+  },
+  {
+    slug: "lazy-bag-sur-mesure",
+    name: "Lazy Bag Sur-Mesure",
+    category: "nautisme",
+    priceCents: 19000,
+    compareAtCents: null,
+    image: "/catalogue/lazy-bag-sur-mesure.jpg",
+    summary: "Protégez votre grand-voile des agressions du soleil et facilitez vos manœuvres d’affalage avec notre Lazy Bag haut de gamme en textile technique upcyclé .",
+    description: "Protégez votre grand-voile des agressions du soleil et facilitez vos manœuvres d’affalage avec notre Lazy Bag haut de gamme en textile technique upcyclé . Confectionné artisanalement à partir de fins de rouleaux acryliques de qualité marine (type Sunbrella), il combine une haute protection anti-UV, une respirabilité optimale et une robustesse à toute épreuve face aux éléments.\n\nLe sur-mesure en toute simplicité : commandez directement selon la longueur de votre bôme !\n\n🏷️ Comment commander votre Lazy Bag sur-mesure ?\n\nNotre tarification pour la gamme de protection de grand-voile est transparente : 190,00 € TTC le mètre linéaire de bôme , tout inclus (toile technique upcyclée, fermeture éclair marine renforcée, lattes de maintien et sangles de fixation).\n\nPour passer commande, il vous suffit d’ajuster la quantité lors de votre ajout au panier pour qu’elle corresponde à la longueur de votre bôme (arrondie au mètre supérieur).\n\nExemple 1 : Votre bôme mesure 3,20 mètres . Sélectionnez une Quantité de 4 au moment de l’achat. (Prix : 760 €)\n\nExemple 2 : Vous possédez une unité avec une bôme de 4,80 mètres . Sélectionnez une Quantité de 5 au moment de l’achat. (Prix : 950 €)\n\nUne fois votre commande validée, notre atelier prend contact avec vous sous 24h pour récupérer vos cotes exactes (gabarit, entraxe de vos lazy jacks) et valider ensemble vos choix de coloris selon notre stock de toiles revalorisées.",
+    purchasable: true,
+  },
+  {
+    slug: "bimini-top",
+    name: "Bimini Top",
+    category: "nautisme",
+    priceCents: 19000,
+    compareAtCents: null,
+    image: "/catalogue/bimini-top.jpg",
+    summary: "Protégez efficacement votre équipement et profitez pleinement de vos moments au mouillage ou à la barre grâce à ce Bimini Top haut de gamme en textile acrylique upcyclé .",
+    description: "Protégez efficacement votre équipement et profitez pleinement de vos moments au mouillage ou à la barre grâce à ce Bimini Top haut de gamme en textile acrylique upcyclé . Confectionné à partir de fins de rouleaux techniques de qualité marine, il offre une zone d’ombre optimale et une protection robuste contre le soleil et les intempéries.\n\nUne configuration simplifiée : commandez directement votre surface de protection au m² !\n\n🏷️ Comment commander vos dimensions sur-mesure ?\n\nNotre tarif pour la gamme taud et protection solaire est transparent : 190,00 € TTC le m² , incluant la toile technique upcyclée, les fourreaux de fixation pour les arceaux et les finitions de bordure renforcées.\n\nPour commander, il vous suffit d’ajuster la quantité lors de votre ajout au panier afin qu’elle corresponde à la surface plane totale du tissu nécessaire (arrondie au mètre carré supérieur).\n\nExemple 1 : Votre plan de cockpit nécessite une toile de protection de 4 m² . Sélectionnez une Quantité de 4 lors de l’achat. (Prix : 760 €)\n\nExemple 2 : Vous possédez une grande unité nécessitant une couverture de 8 m² . Sélectionnez une Quantité de 8 lors de l’achat. (Prix : 1 520 €)\n\nUne fois la commande passée, notre atelier prend contact avec vous sous 24h pour obtenir les cotes exactes entre vos arceaux et la configuration de votre bateau (présence de fenêtres de visualisation, fixations, etc.).",
+    purchasable: true,
+  },
+  {
+    slug: "aile-de-wingfoil-100-upcyclee",
+    name: "Aile de Wingfoil 100% Upcyclée",
+    category: "nautisme",
+    priceCents: 89000,
+    compareAtCents: null,
+    image: "/catalogue/aile-de-wingfoil-100-upcyclee.jpg",
+    summary: "Découvrez la première aile de wingfoil performante, unique et 100% issue de l’upcycling .",
+    description: "Découvrez la première aile de wingfoil performante, unique et 100% issue de l’upcycling . Confectionnée artisanalement à partir de voiles de kitesurf revalorisées et de tissus marins techniques, l’aile Zaïon associe une légèreté exceptionnelle en vol à un engagement écologique fort. Naviguez avec une aile unique qui a déjà une histoire.\n\nChaque aile est assemblée à la main dans notre atelier. Les designs et les coloris dépendent des voiles collectées, faisant de votre wing un modèle absolument unique sur l’eau. En choisissant cette aile, vous évitez la fabrication de matières plastiques neuves et participez activement à la protection de nos terrains de jeu marins.\n\nSurface : 5m²\n\nContactez moi au 06 14 92 25 65 ou par mail à contact@zaion-upcycling.com juste après votre commande pour définir la surface idéale (4m², 5m² ou 6m²) et découvrir les associations de couleurs disponibles dans mon stock actuel de voiles.",
+    purchasable: true,
+  },
+  {
+    slug: "latelier-reparation-sur-mesure",
+    name: "Grille tarifaire Kitesurf et Wingfoil",
+    category: "nautisme",
+    priceCents: null,
+    compareAtCents: null,
+    image: "/catalogue/latelier-reparation-sur-mesure.jpg",
+    summary: "Votre matériel entre de bonnes mains !",
+    description: "Votre matériel entre de bonnes mains ! Ne laissez pas une déchirure ou une fuite gâcher votre saison. L’atelier Zaïon Upcycling redonne vie à vos ailes de kitesurf et voiles de wingfoil grâce à un savoir-faire artisanal ultra-spécialisé. Nous réparons minutieusement chaque élément pour prolonger durablement la vie de votre équipement.\n\n📞 Comment obtenir un devis ou réserver votre réparation ?\n\nChaque réparation étant unique, nous travaillons sur-mesure pour vous garantir le juste tarif.\n\n📱 Par Téléphone / WhatsApp : Contactez-nous directement au +33 6 14 92 25 65 pour nous expliquer votre problème.\n\n✉️ Par Email : Envoyez-nous les photos de vos dégâts à contact@zaion-upcycling.com pour recevoir notre grille tarifaire complète et une estimation gratuite sous 24h.",
+    purchasable: false,
+  },
+  {
+    slug: "housse-bache-de-protection",
+    name: "Housse & Bâche de protection",
+    category: "nautisme",
+    priceCents: 19000,
+    compareAtCents: null,
+    image: "/catalogue/housse-bache-de-protection.jpg",
+    summary: "Protégez efficacement les équipements de votre bateau (consoles, selleries, échelle, barres à roue ou sièges) avec notre bâche de protection premium en textile technique marin upcy",
+    description: "Protégez efficacement les équipements de votre bateau (consoles, selleries, échelle, barres à roue ou sièges) avec notre bâche de protection premium en textile technique marin upcyclé . Conçue sur-mesure à partir de fins de rouleaux et de chutes de tissus d’hivernage de grandes marques, elle offre un bouclier impénétrable contre les UV, la lune, la pluie et le sel.\n\nSimplifiez vos commandes sur-mesure : achetez directement votre surface au m² !\n\n🏷️ Comment commander vos dimensions sur-mesure ?\n\nNotre tarif pour la gamme protection est unique et transparent : 190,00 € TTC le m² , tout inclus (toile technique upcyclée, œillets de fixation, cordons de serrage et finitions).\n\nPour commander, il vous suffit d’ajuster la quantité lors de votre ajout au panier pour qu’elle corresponde à la surface totale de tissu nécessaire (arrondie au mètre carré supérieur).\n\nExemple 1 : Votre bâche de console ou de retour de bôme nécessite une surface développée de 2 m² . Sélectionnez une Quantité de 2 lors de l’achat. (Prix : 380 €)\n\nExemple 2 : Vous devez couvrir un grand ensemble de flybridge ou une bâche d’hivernage complète nécessitant 6 m² . Sélectionnez une Quantité de 6 lors de l’achat. (Prix : 1 140 €)\n\nDès validation de votre commande, notre atelier prend contact avec vous sous 24h pour récupérer les côtes exactes de l’équipement à protéger afin de lancer la confection.",
+    purchasable: true,
+  },
+  {
+    slug: "bain-de-soleil",
+    name: "Bain de soleil",
+    category: "nautisme",
+    priceCents: 45000,
+    compareAtCents: null,
+    image: "/catalogue/bain-de-soleil.jpeg",
+    summary: "Sublimez le pont de votre bateau avec notre bain de soleil haut de gamme en textile technique upcyclé , entièrement confectionné sur-mesure.",
+    description: "Sublimez le pont de votre bateau avec notre bain de soleil haut de gamme en textile technique upcyclé , entièrement confectionné sur-mesure. Conçu à partir de chutes de toiles de sellerie marine et de mousses revalorisées, ce matelas allie confort absolu, ultra-résistance et engagement écologique.\n\nLe sur-mesure en toute simplicité : commandez directement votre surface au m² !\n\n🏷️ Comment commander vos dimensions sur-mesure ?\n\nNotre tarif est unique et transparent : 450,00 € TTC le m² , tout inclus (mousse marine + toile technique upcyclée + finitions).\n\nPour commander, il vous suffit d’ajuster la quantité lors de votre ajout au panier pour qu’elle corresponde à la surface totale souhaitée (arrondie au mètre carré supérieur).\n\nExemple 1 : Vous avez besoin d’un bain de soleil de 3 m² . Sélectionnez une Quantité de 3 au moment de l’achat. (Prix : 1 350 €)\n\nExemple 2 : Votre plan de pont nécessite une surface totale de 10 m² . Sélectionnez une Quantité de 10 au moment de l’achat. (Prix : 4 500 €)\n\nUne fois votre commande validée, notre atelier vous contacte sous 24h pour récupérer les dimensions exactes, les gabarits ou les plans de votre pont afin de lancer la fabrication artisanale.",
+    purchasable: true,
+  },
+  {
+    slug: "tapis",
+    name: "Tapis",
+    category: "mobilier",
+    priceCents: 25000,
+    compareAtCents: 39000,
+    image: "/catalogue/tapis.jpg",
+    summary: "Système de modules textiles organiques composés de chutes de Dacron, Dralon et spi  Chaque pièce fait 45 × 45 cm mais possède des formes différentes.",
+    description: "Système de modules textiles organiques composés de chutes de Dacron, Dralon et spi\n\nChaque pièce fait 45 × 45 cm mais possède des formes différentes.\n\nVisuel non contractuel, réalisé sur commande.",
+    purchasable: true,
+  },
+  {
+    slug: "banquette",
+    name: "Banquette",
+    category: "mobilier",
+    priceCents: 95000,
+    compareAtCents: 120000,
+    image: "/catalogue/banquette.jpg",
+    summary: "B anquette entièrement souple , composée de plusieurs volumes gonflables indépendants.",
+    description: "B anquette entièrement souple , composée de plusieurs volumes gonflables indépendants. Pas de structure rigide. Habillés de Dacron et de Dralon.\n\nAttention : les matières et coloris peuvent varier en fonction des matières disponibles (photo non contractuelle).",
+    purchasable: true,
+  },
+  {
+    slug: "rideau",
+    name: "Rideau",
+    category: "mobilier",
+    priceCents: 45000,
+    compareAtCents: 90000,
+    image: "/catalogue/rideau.jpg",
+    summary: "Le rideau n’est jamais complètement plat.",
+    description: "Le rideau n’est jamais complètement plat. Il ressemble à une voile qui navigue dans le vent grâve à des baguettes glissées à l’intérieur pour créer une ondulation permanente.\n\nDimensions : 150cm x 300cm\n\nPossibilité de créer du sur-mesure, n’hésitez pas à me contacter par mail : contact@zaion-upcycling.com\n\nAttention : les matières et coloris peuvent varier en fonction des matières disponibles (photo non contractuelle).",
+    purchasable: true,
+  },
+  {
+    slug: "lampe-gonflable",
+    name: "Lampe gonflable",
+    category: "mobilier",
+    priceCents: 29000,
+    compareAtCents: 49000,
+    image: "/catalogue/lampe-gonflable.jpg",
+    summary: "Une lampe qui semble être un morceau de voile gonflé par le vent.",
+    description: "Une lampe qui semble être un morceau de voile gonflé par le vent. Une poche en spi translucide : air, lumière LED, textile tendu, couture apparente\n\nLa lumière traverse le spi.\n\nAttention : les matières et coloris peuvent varier en fonction des matières disponibles (photo non contractuelle).",
+    purchasable: true,
+  },
+  {
+    slug: "fauteuil-suspendu",
+    name: "Fauteuil suspendu",
+    category: "mobilier",
+    priceCents: 49000,
+    compareAtCents: 69000,
+    image: "/catalogue/fauteuil-suspendu.jpg",
+    summary: "Une enveloppe textile en spi et Dacron qui prend sa forme grâce à un réseau de baguettes fibre de verre .",
+    description: "Une enveloppe textile en spi et Dacron qui prend sa forme grâce à un réseau de baguettes fibre de verre . Le textile est mis en tension par les baguettes . Cela permet d’avoir une forme très légère, presque comme une aile de parapente.\n\nAttention : les matières et coloris peuvent varier en fonction des matières disponibles (photo non contractuelle).",
+    purchasable: true,
+  },
+  {
+    slug: "pouf-gonflable",
+    name: "Pouf gonflable",
+    category: "mobilier",
+    priceCents: 39000,
+    compareAtCents: 59000,
+    image: "/catalogue/pouf-gonflable.jpg",
+    summary: "Enveloppe extérieure en Dacron, zones en Dralon pour apporter du toucher, vessie intérieure gonflable, valve discrète, fermeture permettant de retirer/remplacer la vessie, poignée ",
+    description: "Enveloppe extérieure en Dacron, zones en Dralon pour apporter du toucher, vessie intérieure gonflable, valve discrète, fermeture permettant de retirer/remplacer la vessie, poignée intégrée.\n\nDimensions : 65 cm de diamètre\n\nAttention : les matières et coloris peuvent varier en fonction des matières disponibles (photo non contractuelle).",
+    purchasable: true,
+  },
+  {
+    slug: "chapeau-bob",
+    name: "CHAPEAU / BOB",
+    category: "mode",
+    priceCents: 3500,
+    compareAtCents: 4000,
+    image: "/catalogue/chapeau-bob.jpg",
+    summary: "Bob réversible en patchwork voile.",
+    description: "Bob réversible en patchwork voile. Coutures apparentes type zig zag, ultra résistant. Modèle iconique upcycling, mixte. Chaque bob = spi + dacron.\n\nTaille unique, taille M (tour de tête 56 cm) : contactez moi pour du sur-mesure.\n\nAttention : les matières et coloris peuvent varier en fonction des matières disponibles (photo non contractuelle).",
+    purchasable: true,
+  },
+];
+
+
+export function getProduct(slug: string) {
+  return catalogue.find((item) => item.slug === slug);
+}
+
+export function productsByCategory(category: string) {
+  return catalogue.filter((item) => item.category === category);
+}

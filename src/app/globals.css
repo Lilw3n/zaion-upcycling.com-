@@ -1,0 +1,79 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: var(--font-outfit), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-fraunces), ui-serif, Georgia, serif;
+  --color-ink: #141414;
+  --color-paper: #f3f0ea;
+  --color-foam: #fffcf8;
+  --color-sea: #121816;
+  --color-sand: #e7e1d6;
+  --color-rust: #c44724;
+  --color-line: #ddd6cb;
+  --color-moss: #1d6b45;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+}
+
+::selection {
+  background: #141414;
+  color: #f3f0ea;
+}
+
+.field {
+  width: 100%;
+  border-radius: 0.4rem;
+  border: 1px solid var(--color-line);
+  background: white;
+  padding: 0.7rem 0.8rem;
+  font-size: 0.95rem;
+  outline: none;
+}
+
+.field:focus {
+  border-color: #141414;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  border-radius: 999px;
+  background: #141414;
+  color: white;
+  padding: 0.75rem 1.2rem;
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.btn:hover {
+  background: #2a2a2a;
+}
+
+.btn-line {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border: 1px solid #141414;
+  padding: 0.7rem 1.1rem;
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.btn-line:hover {
+  background: white;
+}
+
+.prose-copy {
+  white-space: pre-line;
+  line-height: 1.65;
+}
