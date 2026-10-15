@@ -25,7 +25,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
   return (
     <div className="mx-auto grid max-w-6xl gap-10 px-4 py-12 md:grid-cols-2">
-      <img src={product.image} alt={product.name} className="w-full bg-sand object-cover" />
+      <img src={product.image} alt={product.name} className="aspect-[4/5] w-full bg-sand object-cover" />
       <div>
         <Link href={`/univers/${product.category}`} className="text-xs uppercase tracking-[0.18em] text-ink/50">
           {categoryLabel[product.category] ?? product.category}
