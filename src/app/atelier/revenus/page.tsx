@@ -1,6 +1,7 @@
 import { desc } from "drizzle-orm";
 import { db } from "@/db";
 import { revenues } from "@/db/schema";
+import { ExampleMark, MoneyStat } from "@/components/example-mark";
 import { euros } from "@/lib/format";
 import { readSettings, summarize } from "@/lib/finance";
 import { deleteRevenue } from "@/server/actions";
@@ -16,18 +17,18 @@ export default async function RevenuesPage() {
       <div>
         <h1 className="font-serif text-4xl">Revenus</h1>
         <p className="mt-2 max-w-2xl text-sm text-ink/70">
-          Chiffre d'affaires hors taxes, TVA et TTC. Les commandes confirmées arrivent ici. Une commande annulée est retirée des totaux.
+          Le premier montant est le réel. La ligne suivante ajoute les données d'exemple. Cochez « Donnée d'exemple » pour une recette fictive : le libellé s'affiche sur la ligne.
         </p>
       </div>
       <div className="grid gap-3 md:grid-cols-3">
-        <Tile label="CA HT" value={euros(stats.ht)} />
-        <Tile label="TVA" value={euros(stats.vat)} />
-        <Tile label="CA TTC" value={euros(stats.ttc)} />
+        <MoneyStat label="CA HT" real={stats.real.ht} withExamples={stats.withExamples.ht} />
+        <MoneyStat label="TVA" real={stats.real.vat} withExamples={stats.withExamples.vat} />
+        <MoneyStat label="CA TTC" real={stats.real.ttc} withExamples={stats.withExamples.ttc} />
       </div>
       {settings.commissionVisible && (
         <div className="grid gap-3 md:grid-cols-2">
-          <Tile label="Part partenaire" value={euros(stats.commission)} />
-          <Tile label="Activité après part" value={euros(stats.afterCommission)} />
+          <MoneyStat label="Part partenaire" real={stats.real.commission} withExamples={stats.withExamples.commission} />
+          <MoneyStat label="Activité après part" real={stats.real.afterCommission} withExamples={stats.withExamples.afterCommission} />
         </div>
       )}
       <RevenueForm vatRate={settings.vatRate} />
@@ -50,7 +51,7 @@ export default async function RevenuesPage() {
               return (
                 <tr key={row.id} className={`border-t border-line ${row.voided ? "text-ink/40 line-through" : ""}`}>
                   <td className="py-3">{row.occurredOn}</td>
-                  <td>{row.label}</td>
+                  <td>{row.label}{row.example && <ExampleMark />}</td>
                   <td>{euros(row.amountHtCents)}</td>
                   <td>{euros(vat)} <span className="text-xs">({row.vatRate} %)</span></td>
                   <td>{euros(row.amountHtCents + vat)}</td>
@@ -58,7 +59,7 @@ export default async function RevenuesPage() {
                   <td>
                     <form action={deleteRevenue}>
                       <input type="hidden" name="id" value={row.id} />
-                      <button className="text-xs underline">Retirer</button>
+                      <button className="text-xs underline">{row.example ? "Supprimer cette donnée d'exemple" : "Retirer"}</button>
                     </form>
                   </td>
                 </tr>
@@ -71,6 +72,3 @@ export default async function RevenuesPage() {
   );
 }
 
-function Tile({ label, value }: { label: string; value: string }) {
-  return <div className="bg-foam p-4"><p className="text-xs uppercase tracking-wide text-ink/50">{label}</p><p className="mt-1 text-2xl font-semibold">{value}</p></div>;
-}

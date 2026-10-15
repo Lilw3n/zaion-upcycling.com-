@@ -1,6 +1,7 @@
 import { desc } from "drizzle-orm";
 import { db } from "@/db";
 import { leads } from "@/db/schema";
+import { ExampleMark } from "@/components/example-mark";
 import { formatDate, leadStatusLabel } from "@/lib/format";
 import { deleteLead } from "@/server/actions";
 import { LeadForm } from "./lead-form";
@@ -19,13 +20,14 @@ export default async function ContactsPage() {
           <details key={lead.id} className="bg-foam p-4">
             <summary className="cursor-pointer">
               <span className="font-semibold">{lead.name}</span>
+              {lead.example && <ExampleMark />}
               <span className="ml-3 text-sm text-ink/60">{leadStatusLabel[lead.status] ?? lead.status} · {lead.source} · {formatDate(lead.createdAt)}</span>
             </summary>
             <div className="mt-4">
               <LeadForm lead={lead} />
               <form action={deleteLead} className="mt-2">
                 <input type="hidden" name="id" value={lead.id} />
-                <button className="text-xs underline">Retirer ce contact</button>
+                <button className="text-xs underline">{lead.example ? "Supprimer cette donnée d'exemple" : "Retirer ce contact"}</button>
               </form>
             </div>
           </details>

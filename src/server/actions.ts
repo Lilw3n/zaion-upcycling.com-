@@ -531,6 +531,7 @@ export async function createQuote(_prev: ActionState, formData: FormData): Promi
     title,
     status: "infos",
     message: clean(formData.get("message"), 2000) || null,
+    example: formData.get("example") === "on",
   });
   await db.insert(quoteFields).values(
     assemblyQuestions.map((label, sort) => ({
@@ -612,6 +613,7 @@ export async function saveLead(_prev: ActionState, formData: FormData): Promise<
     source: clean(formData.get("source"), 40) || "manuel",
     status: clean(formData.get("status"), 20) || "nouveau",
     notes: clean(formData.get("notes"), 2000) || null,
+    example: formData.get("example") === "on",
   };
   if (!payload.name) return { error: "Le nom est requis." };
   if (id) await db.update(leads).set(payload).where(eq(leads.id, id));
@@ -643,10 +645,38 @@ export async function saveRevenue(_prev: ActionState, formData: FormData): Promi
     vatRate,
     commissionCents: Math.round((amountHtCents * prefs.commissionRate) / 100),
     voided: false,
+    example: formData.get("example") === "on",
   });
   revalidatePath("/atelier/revenus");
   revalidatePath("/pilotage");
   return { ok: "Recette ajoutée." };
+}
+
+export async function deleteExampleOrder(formData: FormData) {
+  await staff();
+  await ensureCatalog();
+  const id = clean(formData.get("id"), 40);
+  const [order] = await db.select().from(orders).where(eq(orders.id, id));
+  if (!order?.example) return;
+  await db.delete(orderItems).where(eq(orderItems.orderId, id));
+  await db.delete(revenues).where(eq(revenues.orderId, id));
+  await db.delete(orders).where(eq(orders.id, id));
+  revalidatePath("/atelier/commandes");
+  revalidatePath("/atelier/revenus");
+  revalidatePath("/atelier");
+  revalidatePath("/pilotage");
+}
+
+export async function deleteExampleQuote(formData: FormData) {
+  await staff();
+  await ensureCatalog();
+  const id = clean(formData.get("id"), 40);
+  const [quote] = await db.select().from(quotes).where(eq(quotes.id, id));
+  if (!quote?.example) return;
+  await db.delete(quoteFields).where(eq(quoteFields.quoteId, id));
+  await db.delete(quotes).where(eq(quotes.id, id));
+  revalidatePath("/atelier/devis");
+  revalidatePath("/atelier");
 }
 
 export async function deleteRevenue(formData: FormData) {
@@ -674,6 +704,7 @@ export async function saveCharge(_prev: ActionState, formData: FormData): Promis
     amountCents: Math.round(amount * 100),
     paid: formData.get("paid") === "on",
     notes: clean(formData.get("notes"), 800) || null,
+    example: formData.get("example") === "on",
   };
   if (id) await db.update(charges).set(payload).where(eq(charges.id, id));
   else await db.insert(charges).values({ id: uid("chg"), ...payload });

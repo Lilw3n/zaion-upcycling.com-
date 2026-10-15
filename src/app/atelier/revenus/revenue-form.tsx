@@ -11,6 +11,7 @@ export function RevenueForm({ vatRate }: { vatRate: number }) {
       <input name="date" type="date" required className="field" />
       <input name="amount" required placeholder="Montant HT" className="field" />
       <input name="vat" defaultValue={vatRate} className="field" />
+      <label className="flex items-center gap-2 text-sm md:col-span-4"><input type="checkbox" name="example" /> Donnée d'exemple</label>
       {state?.error && <p className="text-sm text-rust md:col-span-4">{state.error}</p>}
       {state?.ok && <p className="text-sm text-moss md:col-span-4">{state.ok}</p>}
       <button className="btn md:col-span-4" disabled={pending}>Ajouter la recette</button>

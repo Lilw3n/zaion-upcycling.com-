@@ -23,6 +23,7 @@ export function LeadForm({ lead }: { lead?: Lead }) {
         {Object.entries(leadStatusLabel).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
       </select>
       <textarea name="notes" defaultValue={lead?.notes ?? ""} placeholder="Notes" className="field min-h-20 md:col-span-2" />
+      <label className="flex items-center gap-2 text-sm md:col-span-2"><input type="checkbox" name="example" defaultChecked={lead?.example ?? false} /> Donnée d'exemple</label>
       {state?.error && <p className="text-sm text-rust md:col-span-2">{state.error}</p>}
       {state?.ok && <p className="text-sm text-moss md:col-span-2">{state.ok}</p>}
       <button className="btn" disabled={pending}>{lead ? "Mettre à jour" : "Ajouter le contact"}</button>

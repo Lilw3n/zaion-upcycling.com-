@@ -24,6 +24,16 @@ export function ensureCatalog() {
     await db.execute(sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS discount_cents integer NOT NULL DEFAULT 0`);
     await db.execute(sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS referral_credit_cents integer NOT NULL DEFAULT 0`);
     await db.execute(sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS referrer_name text`);
+    await db.execute(sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS example boolean NOT NULL DEFAULT false`);
+    await db.execute(sql`ALTER TABLE revenues ADD COLUMN IF NOT EXISTS example boolean NOT NULL DEFAULT false`);
+    await db.execute(sql`ALTER TABLE charges ADD COLUMN IF NOT EXISTS example boolean NOT NULL DEFAULT false`);
+    await db.execute(sql`ALTER TABLE leads ADD COLUMN IF NOT EXISTS example boolean NOT NULL DEFAULT false`);
+    await db.execute(sql`ALTER TABLE quotes ADD COLUMN IF NOT EXISTS example boolean NOT NULL DEFAULT false`);
+    await db.execute(sql`UPDATE orders SET example = true WHERE id = 'ord_demo'`);
+    await db.execute(sql`UPDATE revenues SET example = true WHERE id IN ('rev_demo', 'rev_banq', 'rev_chenille')`);
+    await db.execute(sql`UPDATE charges SET example = true WHERE id IN ('chg_urssaf', 'chg_rc_naut', 'chg_rc_mob', 'chg_rc_evt', 'chg_dmg', 'chg_net', 'chg_host')`);
+    await db.execute(sql`UPDATE leads SET example = true WHERE id IN ('lead_camille', 'lead_hotel', 'lead_bruxelles')`);
+    await db.execute(sql`UPDATE quotes SET example = true WHERE id IN ('quo_wing', 'quo_banquette')`);
     await db.execute(sql`CREATE TABLE IF NOT EXISTS promos (
       id text PRIMARY KEY,
       code text NOT NULL UNIQUE,

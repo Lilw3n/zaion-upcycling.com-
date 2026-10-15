@@ -68,6 +68,7 @@ export const orders = pgTable("orders", {
   discountCents: integer("discount_cents").notNull().default(0),
   referralCreditCents: integer("referral_credit_cents").notNull().default(0),
   referrerName: text("referrer_name"),
+  example: boolean("example").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
@@ -112,6 +113,7 @@ export const quotes = pgTable("quotes", {
   status: text("status").notNull(),
   message: text("message"),
   amountHtCents: integer("amount_ht_cents"),
+  example: boolean("example").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
@@ -132,6 +134,7 @@ export const leads = pgTable("leads", {
   source: text("source").notNull(),
   status: text("status").notNull(),
   notes: text("notes"),
+  example: boolean("example").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
@@ -144,6 +147,7 @@ export const revenues = pgTable("revenues", {
   commissionCents: integer("commission_cents").notNull(),
   orderId: text("order_id"),
   voided: boolean("voided").notNull().default(false),
+  example: boolean("example").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
@@ -157,6 +161,7 @@ export const charges = pgTable("charges", {
   period: text("period").notNull(),
   amountCents: integer("amount_cents").notNull(),
   paid: boolean("paid").notNull().default(false),
+  example: boolean("example").notNull().default(false),
   notes: text("notes"),
 });
 

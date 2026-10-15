@@ -2,7 +2,9 @@ import Link from "next/link";
 import { desc } from "drizzle-orm";
 import { db } from "@/db";
 import { quoteFields, quotes } from "@/db/schema";
+import { ExampleMark } from "@/components/example-mark";
 import { categoryLabel, euros, formatDate, quoteStatusLabel } from "@/lib/format";
+import { deleteExampleQuote } from "@/server/actions";
 import { NewQuoteForm } from "./new-quote-form";
 
 export default async function QuotesPage() {
@@ -36,7 +38,13 @@ export default async function QuotesPage() {
                 <tr key={quote.id} className="border-t border-line">
                   <td className="py-3">
                     <Link href={`/atelier/devis/${quote.id}`} className="font-semibold underline">{quote.number}</Link>
-                    <p>{quote.title}</p>
+                    <p>{quote.title}{quote.example && <ExampleMark />}</p>
+                    {quote.example && (
+                      <form action={deleteExampleQuote}>
+                        <input type="hidden" name="id" value={quote.id} />
+                        <button className="text-xs text-rust underline">Supprimer cette donnée d'exemple</button>
+                      </form>
+                    )}
                     <p className="text-xs text-ink/50">{formatDate(quote.createdAt)}</p>
                   </td>
                   <td>{quote.contactName}<br />{quote.email}</td>

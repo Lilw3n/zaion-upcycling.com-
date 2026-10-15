@@ -23,7 +23,7 @@ export async function setSetting(key: string, value: string) {
   }
 }
 
-export function summarize(revenues: Revenue[], charges: Charge[]) {
+function tally(revenues: Revenue[], charges: Charge[]) {
   const active = revenues.filter((row) => !row.voided);
   const ht = active.reduce((sum, row) => sum + row.amountHtCents, 0);
   const vat = active.reduce((sum, row) => sum + Math.round((row.amountHtCents * row.vatRate) / 100), 0);
@@ -39,5 +39,12 @@ export function summarize(revenues: Revenue[], charges: Charge[]) {
     charges: chargeTotal,
     unpaid,
     result: ht - commission - chargeTotal,
+  };
+}
+
+export function summarize(revenues: Revenue[], charges: Charge[]) {
+  return {
+    real: tally(revenues.filter((row) => !row.example), charges.filter((row) => !row.example)),
+    withExamples: tally(revenues, charges),
   };
 }

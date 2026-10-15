@@ -1,5 +1,6 @@
 import { db } from "@/db";
 import { charges } from "@/db/schema";
+import { ExampleMark, MoneyStat } from "@/components/example-mark";
 import { chargeKindLabel, euros } from "@/lib/format";
 import { deleteCharge, toggleCharge } from "@/server/actions";
 import { ChargeForm } from "./charge-form";
@@ -12,7 +13,8 @@ export default async function ChargesPage() {
   const grouped = order.map((kind) => ({
     kind,
     rows: rows.filter((row) => row.kind === kind),
-    total: rows.filter((row) => row.kind === kind).reduce((sum, row) => sum + row.amountCents, 0),
+    real: rows.filter((row) => row.kind === kind && !row.example).reduce((sum, row) => sum + row.amountCents, 0),
+    withExamples: rows.filter((row) => row.kind === kind).reduce((sum, row) => sum + row.amountCents, 0),
   }));
 
   return (
@@ -20,15 +22,12 @@ export default async function ChargesPage() {
       <div>
         <h1 className="font-serif text-4xl">Charges</h1>
         <p className="mt-2 max-w-2xl text-sm text-ink/70">
-          URSSAF, RC Pro par activité, dommages aux biens, internet et hébergement. Les primes à zéro sont des lignes à compléter. La police RC 4442402N est celle citée pour l'activité.
+          Le premier montant est le réel. La ligne suivante ajoute les données d'exemple. Une charge fictive se coche « Donnée d'exemple » et garde ce libellé.
         </p>
       </div>
       <div className="grid gap-3 md:grid-cols-3">
         {grouped.filter((group) => group.kind !== "equipement").map((group) => (
-          <div key={group.kind} className="bg-foam p-4">
-            <p className="text-xs uppercase tracking-wide text-ink/50">{chargeKindLabel[group.kind]}</p>
-            <p className="mt-1 text-2xl font-semibold">{euros(group.total)}</p>
-          </div>
+          <MoneyStat key={group.kind} label={chargeKindLabel[group.kind]} real={group.real} withExamples={group.withExamples} />
         ))}
       </div>
       <ChargeForm />
@@ -40,7 +39,7 @@ export default async function ChargesPage() {
               {group.rows.map((row) => (
                 <article key={row.id} className="grid gap-2 bg-foam p-4 md:grid-cols-[1.4fr_0.6fr_0.6fr_auto] md:items-center">
                   <div>
-                    <p className="font-medium">{row.label}</p>
+                    <p className="font-medium">{row.label}{row.example && <ExampleMark />}</p>
                     <p className="text-sm text-ink/60">
                       {[row.activity, row.provider, row.reference, row.period].filter(Boolean).join(" · ")}
                     </p>
@@ -53,7 +52,7 @@ export default async function ChargesPage() {
                   </form>
                   <form action={deleteCharge}>
                     <input type="hidden" name="id" value={row.id} />
-                    <button className="text-xs underline">Retirer</button>
+                    <button className="text-xs underline">{row.example ? "Supprimer cette donnée d'exemple" : "Retirer"}</button>
                   </form>
                 </article>
               ))}

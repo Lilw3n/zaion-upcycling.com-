@@ -21,6 +21,7 @@ export function ChargeForm() {
       <input name="provider" placeholder="Organisme" className="field" />
       <input name="reference" placeholder="N° de police ou facture" className="field" />
       <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="paid" /> Déjà payée</label>
+      <label className="flex items-center gap-2 text-sm md:col-span-2"><input type="checkbox" name="example" defaultChecked={false} /> Donnée d'exemple</label>
       <textarea name="notes" placeholder="Note" className="field md:col-span-3" />
       {state?.error && <p className="text-sm text-rust md:col-span-3">{state.error}</p>}
       {state?.ok && <p className="text-sm text-moss md:col-span-3">{state.ok}</p>}

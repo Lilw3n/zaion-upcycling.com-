@@ -2,10 +2,11 @@ import { desc } from "drizzle-orm";
 import { db } from "@/db";
 import { ensureCatalog } from "@/db/ensure";
 import { orderItems, orders } from "@/db/schema";
+import { ExampleMark } from "@/components/example-mark";
 import { euros, formatDate, orderStatusLabel } from "@/lib/format";
 import { getSession } from "@/lib/session";
 import { readSettings } from "@/lib/finance";
-import { recordManualPayment, saveOrderNote, updateOrderStatus } from "@/server/actions";
+import { deleteExampleOrder, recordManualPayment, saveOrderNote, updateOrderStatus } from "@/server/actions";
 
 export default async function OrdersAdminPage() {
   await ensureCatalog();
@@ -33,7 +34,7 @@ export default async function OrdersAdminPage() {
           <article key={order.id} className="bg-foam p-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
-                <p className="font-semibold">{order.number} · {euros(order.totalCents)} TTC</p>
+                <p className="font-semibold">{order.number} · {euros(order.totalCents)} TTC{order.example && <ExampleMark />}</p>
                 <p className="text-sm">{order.customerName} · {order.customerEmail}{order.phone ? ` · ${order.phone}` : ""}</p>
                 <p className="text-sm text-ink/60">{formatDate(order.createdAt)} · HT {euros(order.subtotalCents)} · TVA {euros(order.vatCents)}</p>
                 {order.discountCents > 0 && <p className="text-sm text-moss">Code {order.promoCode} · remise {euros(order.discountCents)}</p>}
@@ -67,6 +68,12 @@ export default async function OrdersAdminPage() {
                   <input name="detail" className="field mt-1" placeholder="Virement, espèces, SumUp…" />
                 </label>
                 <button className="btn">Enregistrer le paiement manuel</button>
+              </form>
+            )}
+            {order.example && (
+              <form action={deleteExampleOrder} className="mt-3">
+                <input type="hidden" name="id" value={order.id} />
+                <button className="text-sm text-rust underline">Supprimer cette donnée d'exemple</button>
               </form>
             )}
             {order.note && <p className="mt-3 text-sm text-ink/70">Note du client : {order.note}</p>}

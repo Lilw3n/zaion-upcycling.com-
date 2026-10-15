@@ -2,7 +2,7 @@ import Link from "next/link";
 import { PasswordForm } from "@/components/password-form";
 import { db } from "@/db";
 import { charges, revenues, users } from "@/db/schema";
-import { euros } from "@/lib/format";
+import { MoneyStat } from "@/components/example-mark";
 import { readSettings, summarize } from "@/lib/finance";
 import { googleReady, ionosReady, zaionStripePublishableReady, zaionStripeReady } from "@/lib/providers";
 import { googleServiceAddress } from "@/lib/places";
@@ -28,10 +28,10 @@ export default async function PilotagePage() {
         </p>
       </div>
       <div className="grid gap-3 md:grid-cols-4">
-        <Tile label="CA HT" value={euros(stats.ht)} />
-        <Tile label="Votre part" value={euros(stats.commission)} />
-        <Tile label="Reste atelier" value={euros(stats.afterCommission)} />
-        <Tile label="Après charges" value={euros(stats.result)} />
+        <MoneyStat label="CA HT" real={stats.real.ht} withExamples={stats.withExamples.ht} />
+        <MoneyStat label="Votre part" real={stats.real.commission} withExamples={stats.withExamples.commission} />
+        <MoneyStat label="Reste atelier" real={stats.real.afterCommission} withExamples={stats.withExamples.afterCommission} />
+        <MoneyStat label="Après charges" real={stats.real.result} withExamples={stats.withExamples.result} />
       </div>
       <CommissionForm rate={settings.commissionRate} visible={settings.commissionVisible} vat={settings.vatRate} />
       <section className="bg-foam p-5">
@@ -111,8 +111,4 @@ export default async function PilotagePage() {
       </section>
     </div>
   );
-}
-
-function Tile({ label, value }: { label: string; value: string }) {
-  return <div className="bg-ink p-4 text-paper"><p className="text-xs uppercase tracking-wide text-sand">{label}</p><p className="mt-2 text-2xl font-semibold">{value}</p></div>;
 }
