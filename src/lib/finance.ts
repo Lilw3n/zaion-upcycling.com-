@@ -9,6 +9,8 @@ export async function readSettings() {
     commissionRate: Number(map.commission_rate ?? 10),
     commissionVisible: map.commission_visible === "1",
     vatRate: Number(map.vat_rate ?? 20),
+    atelierAddress: map.atelier_address ?? "",
+    atelierPublic: map.atelier_public === "1",
   };
 }
 

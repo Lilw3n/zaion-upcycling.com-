@@ -26,6 +26,7 @@ import { splitTtc } from "@/lib/format";
 import { sendMailboxMail } from "@/lib/mail";
 import { ionosReady } from "@/lib/providers";
 import { readSettings, setSetting } from "@/lib/finance";
+import { isPersonalHome } from "@/lib/places";
 import { assemblyQuestions } from "@/lib/questions";
 import { clearSession, getSession, homeFor, setSession, type Session } from "@/lib/session";
 
@@ -561,6 +562,39 @@ export async function updateProduct(formData: FormData) {
     .where(eq(products.id, id));
   revalidatePath("/boutique");
   revalidatePath("/atelier/produits");
+}
+
+export async function saveAtelierPresence(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const session = await staff();
+  const address = clean(formData.get("address"), 180);
+  const wantsPublic = formData.get("public") === "on";
+  const accepted = formData.get("risks") === "on";
+  if (wantsPublic) {
+    if (session.role !== "atelier") {
+      return { error: "Seule Zaïon peut publier cette adresse. Depuis le pilotage, on peut seulement la retirer." };
+    }
+    if (!accepted) return { error: "Cochez la confirmation des risques pour publier l'adresse." };
+    if (address.length < 12) return { error: "Indiquez l'adresse complète du lieu de rendez-vous." };
+    if (isPersonalHome(address)) {
+      return { error: "Le domicile ne se publie pas sur le site. Il reste réservé à Google, avec l'adresse masquée." };
+    }
+  }
+  await setSetting("atelier_address", address);
+  await setSetting("atelier_public", wantsPublic ? "1" : "0");
+  revalidatePath("/contact");
+  revalidatePath("/a-propos");
+  revalidatePath("/atelier");
+  revalidatePath("/pilotage");
+  return { ok: wantsPublic ? "L'adresse est en ligne, comme lieu de rendez-vous." : "Adresse enregistrée. Elle n'apparaît pas sur le site." };
+}
+
+export async function unpublishAtelier() {
+  await actor(["superadmin", "atelier"]);
+  await setSetting("atelier_public", "0");
+  revalidatePath("/contact");
+  revalidatePath("/a-propos");
+  revalidatePath("/atelier");
+  revalidatePath("/pilotage");
 }
 
 export async function saveCommission(_prev: ActionState, formData: FormData): Promise<ActionState> {

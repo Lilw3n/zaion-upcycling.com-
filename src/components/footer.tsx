@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { categories } from "@/data/catalogue";
+import { publicAtelierAddress } from "@/components/public-address";
 
-export function Footer() {
+export async function Footer() {
+  const atelier = await publicAtelierAddress();
   return (
     <footer className="mt-20 bg-sea text-paper">
       <div className="mx-auto grid max-w-6xl gap-10 px-4 py-14 md:grid-cols-4">
@@ -34,6 +36,7 @@ export function Footer() {
           <p className="text-sm">Zaïon Naceur</p>
           <a className="mt-2 block text-sm" href="tel:+33614922565">06 14 92 25 65</a>
           <a className="block text-sm" href="mailto:contact@zaion-upcycling.com">contact@zaion-upcycling.com</a>
+          {atelier && <p className="mt-3 text-sm">Rendez-vous : {atelier}</p>}
           <p className="mt-4 text-sm text-sand">Du lundi au vendredi, réponse sous 24 h ouvrées.</p>
         </div>
       </div>
@@ -44,6 +47,11 @@ export function Footer() {
           <Link href="/politique-de-confidentialite">Confidentialité</Link>
           <Link href="/cookies">Cookies</Link>
           <span>© {new Date().getFullYear()} Zaïon Upcycling</span>
+          <span>
+            Site développé par <a className="underline" href="https://www.leadsopportunities.fr/">Wendy Buchet · Leads Opportunities</a>
+            {" · "}
+            <a className="underline" href="mailto:contact@leadsopportunities.fr">Devis création de site</a>
+          </span>
         </div>
       </div>
     </footer>

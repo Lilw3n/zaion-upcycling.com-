@@ -18,6 +18,8 @@ export default function LegalNoticePage() {
       <p>Siège et établissement principal : {company.address}. Établissement en activité depuis le {company.establishmentSince}. Effectif déclaré : {company.staff}.</p>
       <p>Directeur de la publication : {company.name}.</p>
       <p>Contact : <a className="underline" href={`mailto:${company.email}`}>{company.email}</a> · <a className="underline" href={company.phoneHref}>{company.phone}</a>.</p>
+      <h2>Conception du site</h2>
+      <p>Site développé par Wendy Buchet, <a className="underline" href="https://www.leadsopportunities.fr/">Leads Opportunities</a>. Pour un devis de création de site : <a className="underline" href="mailto:contact@leadsopportunities.fr">contact@leadsopportunities.fr</a>.</p>
       <h2>Hébergement du site</h2>
       <p>Le site est hébergé par {company.hostName}, {company.hostAddress} ({company.hostSite}).</p>
       <p>La messagerie du nom de domaine reste pour l'instant chez l'hébergeur actuel. L'envoi des liens de connexion est prévu sur {company.mailProvider} ({company.mailHost}), depuis {company.email}, au moment du transfert de la boîte.</p>
