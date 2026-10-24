@@ -35,7 +35,7 @@ export default function PrivacyPage() {
         <li>{company.hostName}, hébergement du site.</li>
         <li>Neon, hébergement de la base de données, dans l'Union européenne (Francfort).</li>
         <li>{company.mailProvider}, envoi des e-mails de connexion, dès que la boîte {company.email} y sera ouverte.</li>
-        <li>Google, via Tag Manager (GTM-MB75LQ4V), pour la mesure de visite selon les balises actives dans le conteneur.</li>
+        <li>Google, via Tag Manager (GTM-MB75LQ4V) et Google Analytics 4 (G-1MYNCJE28N), pour mesurer les visites et l'utilisation du site.</li>
         <li>Google, si vous cliquez sur « Continuer avec Google » : Google transmet alors l'adresse vérifiée, le nom et un identifiant.</li>
       </ul>
       <p>Les données ne sont ni vendues, ni cédées à des régies publicitaires.</p>
